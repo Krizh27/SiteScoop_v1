@@ -27,3 +27,31 @@ export async function fetchHealth() {
     throw error;
   }
 }
+
+/**
+ * Trigger website extraction on the backend.
+ * @param {string} url - Target website URL
+ * @returns {Promise<object>} Extraction result with projectId, metadata, and asset counts
+ */
+export async function extractWebsite(url) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/extract`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ url })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to extract website:', error);
+    throw error;
+  }
+}

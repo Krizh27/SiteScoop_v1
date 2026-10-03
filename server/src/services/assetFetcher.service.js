@@ -7,10 +7,10 @@ import { sanitizeFilename, getExtensionFromContentType, ensureDir } from '../uti
 
 // Constraints defined in requirements
 const MAX_CONCURRENCY = 4;
-const MAX_INDIVIDUAL_ASSET_SIZE = 5 * 1024 * 1024; // 5 MB
-const MAX_AGGREGATE_SIZE = 25 * 1024 * 1024;        // 25 MB
-const MAX_TOTAL_ASSETS = 40;                        // Up to 40 assets
-const ASSET_REQUEST_TIMEOUT = 8000;                 // 8 seconds
+const MAX_INDIVIDUAL_ASSET_SIZE = 3 * 1024 * 1024; // 3 MB
+const MAX_AGGREGATE_SIZE = 10 * 1024 * 1024;       // 10 MB
+const MAX_TOTAL_ASSETS = 20;                       // Up to 20 assets
+const ASSET_REQUEST_TIMEOUT = 8000;                // 8 seconds
 
 /**
  * Concurrent async task pool with max concurrency.
