@@ -29,11 +29,22 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col items-center justify-start p-4 sm:p-6 md:p-10 font-sans selection:bg-purple-100 selection:text-purple-900">
-      <div className="max-w-3xl w-full text-center space-y-8 py-6">
+    <div className="relative min-h-screen bg-canvas flex flex-col items-center justify-start p-4 sm:p-6 md:p-10 font-sans selection:bg-purple-100 selection:text-purple-900 overflow-x-hidden">
+      {/* Background Decorative Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
+        {/* Subtle engineering grid with radial fade mask */}
+        <div className="absolute inset-0 bg-grid-subtle radial-fade-mask opacity-85" />
+        
+        {/* Ambient violet and sky gradient light glows */}
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[720px] h-[460px] bg-gradient-to-tr from-brand-300/30 via-violet-300/20 to-sky-300/25 blur-3xl rounded-full" />
+        <div className="absolute top-96 -left-28 w-88 h-88 bg-purple-200/25 blur-3xl rounded-full" />
+        <div className="absolute top-80 -right-28 w-88 h-88 bg-sky-200/25 blur-3xl rounded-full" />
+      </div>
+
+      <div className="relative z-10 max-w-3xl w-full text-center space-y-8 py-6">
         {/* Brand Header */}
         <header className="space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-border shadow-clean text-xs font-semibold text-ink">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-xs border border-border shadow-clean text-xs font-semibold text-ink">
             <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse"></span>
             <span>SiteScoop AI</span>
             <span className="text-ink-muted">·</span>
@@ -49,7 +60,7 @@ function Dashboard() {
         </header>
 
         {/* Hero Card */}
-        <main className="bg-white p-6 sm:p-8 rounded-2xl shadow-clean-md border border-border space-y-6 text-left">
+        <main className="bg-white/95 backdrop-blur-xs p-6 sm:p-8 rounded-2xl shadow-clean-md border border-border space-y-6 text-left">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-ink">

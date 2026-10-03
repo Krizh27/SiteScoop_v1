@@ -271,7 +271,7 @@ const ProjectExplorer = () => {
         </div>
 
         {/* ================= CENTER COLUMN: Code / Preview / Inspector / Report ================= */}
-        <div className="flex-1 bg-white border-r border-border flex flex-col min-w-0 overflow-hidden relative">
+        <div className="flex-1 bg-canvas bg-grid-subtle border-r border-border flex flex-col min-w-0 overflow-hidden relative">
           {activeTab === 'preview' ? (
             /* Stage 9: Live Preview with browser chrome */
             <div className="flex flex-col h-full bg-canvas">
