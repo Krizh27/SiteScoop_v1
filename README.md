@@ -44,3 +44,4 @@ npm run dev
 ## Current Implementation Status
 - **Stage 0**: Project Foundation is complete.
 - **Stage 1**: Website Recovery Engine is complete. Recover deployed sites into a workspace.
+- **Stage 2**: Recovery Explorer & Workspace API is complete. Safely view and traverse recovered resources.

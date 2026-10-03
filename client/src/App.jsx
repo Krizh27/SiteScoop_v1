@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import UrlInput from './components/UrlInput';
 import RecoveryProgress from './components/RecoveryProgress';
 import RecoverySummary from './components/RecoverySummary';
+import ProjectList from './components/workspace/ProjectList';
+import ProjectExplorer from './components/workspace/ProjectExplorer';
 import { recoverWebsite } from './services/recoveryApi';
 
-function App() {
+function Dashboard() {
   const [status, setStatus] = useState('idle'); // idle, recovering, completed, error
   const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,9 +50,20 @@ function App() {
             <RecoveryProgress status={status} />
             {result && <RecoverySummary result={result} />}
           </div>
+          
+          <ProjectList />
         </main>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/project/:projectId" element={<ProjectExplorer />} />
+    </Routes>
   );
 }
 
