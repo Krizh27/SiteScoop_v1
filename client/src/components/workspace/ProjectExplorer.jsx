@@ -69,7 +69,7 @@ const ProjectExplorer = () => {
 
         {/* Right: AI Developer Panel */}
         <div className="w-80 flex flex-col shrink-0">
-          <AIDeveloperPanel />
+          <AIDeveloperPanel projectId={projectId} />
         </div>
       </div>
     </div>

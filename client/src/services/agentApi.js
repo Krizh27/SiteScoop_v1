@@ -17,6 +17,30 @@ export const executeAgentTool = async (tool, input) => {
   });
   
   const data = await response.json();
-  // We return the raw object which contains either { success: true, data } or { success: false, error }
+  return data;
+};
+
+/**
+ * Fetch current Agent subsystem status.
+ */
+export const getAgentStatus = async () => {
+  const response = await fetch(`${API_BASE_URL}/agent/status`);
+  const data = await response.json();
+  return data;
+};
+
+/**
+ * Run the autonomous read-only agent for a given project and request.
+ */
+export const runAgent = async (projectId, request) => {
+  const response = await fetch(`${API_BASE_URL}/agent/run`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ projectId, request })
+  });
+
+  const data = await response.json();
   return data;
 };

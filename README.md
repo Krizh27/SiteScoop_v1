@@ -89,9 +89,36 @@ SiteScoop AI connects to local open-weights models (such as Gemma) running via O
      -d "{\"prompt\": \"Explain your role in SiteScoop AI in 3 concise bullet points.\"}"
    ```
 
+## AI Agent
+
+SiteScoop uses a local Gemma model through Ollama.
+
+The model does not receive arbitrary filesystem or shell access.
+
+Instead it interacts with SiteScoop through a validated read-only tool layer.
+
+Current tools:
+- `list_project_files`
+- `read_file`
+- `search_project`
+- `get_recovery_report`
+- `get_file_metadata`
+- `analyze_dependencies`
+
+### Run Agent Endpoint
+```bash
+curl -X POST http://localhost:5000/api/agent/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "projectId": "recovery-20261003060539-809",
+    "request": "Explain the structure of this recovered website."
+  }'
+```
+
 ## Current Implementation Status
 - **Stage 0**: Project Foundation is complete.
 - **Stage 1**: Website Recovery Engine is complete. Recover deployed sites into a workspace.
 - **Stage 2**: Recovery Explorer & Workspace API is complete. Safely view and traverse recovered resources.
 - **Stage 3**: Agent Tool Layer is complete. An isolated, Zod-validated tool registry stands ready for the future AI model.
-- **Stage 4**: Local Gemma Model Adapter is complete. Configuration-driven Ollama connection with base system prompts, error sandboxing, and non-streaming model generation. Autonomous tool calling arrives in Stage 5.
+- **Stage 4**: Local Gemma Model Adapter is complete. Configuration-driven Ollama connection with base system prompts, error sandboxing, and non-streaming model generation.
+- **Stage 5**: Agent Harness is complete. Autonomous multi-step read-only reasoning loop, Zod action protocol, repeat-call detection, step limits, and Developer Agent Panel.

@@ -6,12 +6,19 @@ export const AgentErrors = {
   PATH_NOT_ALLOWED: 'PATH_NOT_ALLOWED',
   BINARY_FILE: 'BINARY_FILE',
   FILE_TOO_LARGE: 'FILE_TOO_LARGE',
-  TOOL_EXECUTION_FAILED: 'TOOL_EXECUTION_FAILED'
+  TOOL_EXECUTION_FAILED: 'TOOL_EXECUTION_FAILED',
+
+  // Stage 5 Agent Harness error codes
+  INVALID_AGENT_ACTION: 'INVALID_AGENT_ACTION',
+  TOOL_NOT_ALLOWED: 'TOOL_NOT_ALLOWED',
+  AGENT_STEP_LIMIT_REACHED: 'AGENT_STEP_LIMIT_REACHED',
+  MODEL_COMMUNICATION_ERROR: 'MODEL_COMMUNICATION_ERROR'
 };
 
 export class AgentError extends Error {
   constructor(code, message) {
     super(message);
+    this.name = 'AgentError';
     this.code = code;
   }
 }

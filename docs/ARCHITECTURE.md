@@ -62,11 +62,51 @@ SiteScoop AI intentionally decouples the **Model Adapter** (`server/src/ai/`) fr
 3. **Fault Tolerance & Resilience**: If Ollama is offline or unconfigured, the rest of SiteScoop AI (website recovery engine, workspace API, file explorer, project report) continues to function completely independently.
 4. **Clean Staging for Agent Harness (Stage 5)**: In Stage 5, the Agent Harness will sit between the Model Service and the Tool Registry, governing reasoning loops, tool invocation, and reflection without tangling HTTP protocol handling with tool execution.
 
-## Planned Future Components
+## Agent Harness
 
-### Agent Harness (Stage 5)
-- Orchestrate autonomous reasoning loops between Gemma and the Safe Tool Registry.
-- Map prompt context and structured tool arguments.
+In Stage 5, we implemented the **Agent Harness** (`server/src/agent/`), which links the local Gemma model to the read-only Safe Tool Registry through an iterative reasoning loop.
+
+### Control Flow
+
+```text
+User Request
+     ↓
+Agent Service (agent.service.js)
+     ↓
+Agent Loop (agent-loop.js)
+     ↓
+Gemma (via Model Service)
+     ↓
+Structured Action (JSON)
+     ↓
+Zod Validation (agent.schemas.js)
+     ↓
+Agent Policy (agent-policy.js)
+     ↓
+Tool Executor (tool-executor.js)
+     ↓
+Read-only Tool (safe workspace boundary)
+     ↓
+Observation (truncated to size limits)
+     ↓
+Gemma (next turn)
+     ↓
+Final Answer (markdown)
+```
+
+### Authorization Principle
+
+**Gemma proposes actions, but the application authorizes and executes them.**
+
+1. **Model Proposes Actions**: The model returns structured JSON with an action type (`tool_call`, `final`, or `clarification`).
+2. **Server Validates & Authorizes**:
+   - `AgentParser` safely extracts and validates the action shape with Zod without using `eval()`.
+   - `AgentPolicy` strictly enforces that only the six permitted read-only tools can be called. Unknown or mutating tools (e.g. `delete_file`, `exec_command`) are rejected before execution.
+   - Project ID boundaries are enforced automatically by the server context, preventing path traversal outside the project directory.
+   - Runaway loops are blocked via step limits (`AGENT_MAX_STEPS`) and repeated tool call detection.
+3. **No Private Chain-of-Thought Leaks**: Internal prompts and hidden thoughts are omitted from the client response. Only tool activity names and the final answer are returned to the user.
+
+## Planned Future Components
 
 ### Code Modification & Export (Future)
 - Code modifications via safe diff application.
