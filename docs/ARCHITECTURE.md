@@ -28,10 +28,11 @@ SiteScoop AI is an open-source, AI-powered website recovery and development agen
 |                           Core Subsystems                               |
 +-------------------------------------------------------------------------+
 |                                                                         |
-|  [PLANNED - Stage 1] Website Extraction Layer                           |
-|    - HTML parser & DOM crawler (Cheerio)                                |
-|    - Dynamic headless browser rendering (Playwright)                    |
-|    - Asset fetcher (CSS, JS, fonts, images)                             |
+|  [COMPLETED - Stage 1] Website Extraction Engine                        |
+|    - SSRF-protected HTTP client with redirect validation (Axios/ipaddr)  |
+|    - HTML parser & metadata / resource collector (Cheerio)              |
+|    - Concurrency-governed public asset fetcher (CSS, JS, images, fonts) |
+|    - Staging pipeline: workspace/.staging/<id>/ & manifest.json         |
 |                                                                         |
 |  [PLANNED - Stage 2] Workspace & File Management Layer                  |
 |    - Sandboxed local project directories (./workspace/)                |
@@ -65,25 +66,43 @@ SiteScoop AI is an open-source, AI-powered website recovery and development agen
   - Keeps UI modular, responsive, and resilient to backend polling cycles.
 
 ### 2. Backend Responsibilities
-- **Status**: Implemented (Stage 0 Foundation)
-- **Technology**: Node.js, Express.js, ES Modules, `dotenv`, `cors`.
+- **Status**: Implemented (Stage 0 Foundation & Stage 1 Extraction)
+- **Technology**: Node.js, Express.js, ES Modules, `dotenv`, `cors`, `axios`, `cheerio`, `ipaddr.js`.
 - **Responsibilities**:
   - Acts as the central orchestrator coordinating website extraction, project synthesis, AI inference, and file operations.
   - Serves REST API endpoints for frontend consumption:
     - `GET /api/health` — Returns application status and operational readiness.
+    - `POST /api/extract` — Accepts `{ "url": "..." }`, orchestrates SSRF-safe extraction, stages HTML and public assets, and returns structured extraction metadata.
   - Configures CORS for local frontend development (`http://localhost:5173`).
   - Implements centralized error handling and 404 route handling.
   - Decouples server startup (`src/server.js`) from Express application configuration (`src/app.js`) for testability.
 
 ### 3. Website Extraction Layer
-- **Status**: Planned (Stage 1)
-- **Planned Technology**: `cheerio`, `playwright` (headless browser).
+- **Status**: Implemented (Stage 1 Engine)
+- **Technology**: `axios`, `cheerio`, `ipaddr.js`, Node.js `dns/promises`, `fs/promises`.
 - **Responsibilities**:
   - Accepts a deployed target URL (e.g. `https://example.com`).
-  - Performs static extraction using Cheerio to rapidly parse HTML and collect linked assets (`<link rel="stylesheet">`, `<script>`, `<img src>`, fonts, manifests).
-  - Provides optional dynamic rendering using Playwright for client-side rendered (SPA/SSR) websites that require JavaScript execution to populate the DOM.
-  - Resolves relative URLs to absolute URLs, respects site structures, and downloads assets securely into an isolated staging buffer.
-  - Sanitizes asset filenames and paths to avoid directory traversal risks.
+  - **SSRF Protection & URL Validation** (`urlValidator.service.js`):
+    - Restricts protocols to `http:` and `https:`.
+    - Prohibits embedded credentials, empty hostnames, and malformed strings.
+    - Blocks loopback, private IPv4/IPv6, link-local, carrier-grade NAT, and cloud metadata endpoints (`169.254.169.254`, `metadata.google.internal`).
+    - Performs full DNS resolution check on all resolved IPs.
+    - Tracks redirects manually up to 3 hops, revalidating every destination IP against SSRF rules.
+  - **HTML & Resource Parsing** (`resourceExtractor.service.js`):
+    - Parses HTML via Cheerio with `<base href>` resolution support.
+    - Extracts page metadata: title, description, canonical URL, language, viewport, favicon.
+    - Collects and deduplicates stylesheet references (`<link rel="stylesheet">`, `@import`).
+    - Collects script references (`<script src>`).
+    - Collects images (`<img src>`, `<img srcset>`, `<picture><source>`).
+    - Collects fonts (`<link rel="preload" as="font">`, `.woff`, `.woff2`, `.ttf`, etc.).
+    - Collects manifests, icons, and top-level navigation links.
+  - **Asset Fetching & Staging** (`assetFetcher.service.js`, `fileUtils.js`):
+    - Limits download concurrency to 4 simultaneous requests.
+    - Enforces 5 MB per-asset limit, 40 total assets cap, and 25 MB aggregate download budget.
+    - Validates asset URLs against SSRF policies prior to fetching.
+    - Sanitizes filenames against path traversal attacks and preserves valid extensions.
+    - Stages original `index.html`, downloaded assets, and `manifest.json` under `workspace/.staging/<extraction-id>/`.
+  - *Future Enhancement*: Dynamic headless browser rendering (Playwright) planned for client-side rendered SPA websites.
 
 ### 4. Workspace & File Management Layer
 - **Status**: Planned (Stage 2)
@@ -120,7 +139,7 @@ SiteScoop AI is an open-source, AI-powered website recovery and development agen
 | Stage | Module | Status | Description |
 |---|---|---|---|
 | **Stage 0** | **Project Foundation** | **Completed** | Express backend, React/Vite/Tailwind frontend, `/api/health`, environment configs, documentation. |
-| **Stage 1** | **Website Extraction** | **Planned** | Cheerio HTML scraping, asset fetching, Playwright optional dynamic browser rendering. |
+| **Stage 1** | **Website Extraction Engine** | **Completed** | SSRF-safe URL validation, Cheerio HTML parsing, asset fetcher, `POST /api/extract`, staging manifest. |
 | **Stage 2** | **Workspace Synthesis** | **Planned** | Workspace file management, project structure reconstruction, diff engine, ZIP exporter. |
 | **Stage 3** | **Local AI Inference** | **Planned** | Ollama integration with local Gemma 4 model, prompt engineering, code diagnosis. |
 | **Stage 4** | **Agent Development Loop**| **Planned** | Tool execution harness, Zod validation, iterative self-repair and refinement. |

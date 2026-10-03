@@ -1,6 +1,6 @@
 # SiteScoop AI — Implementation Status Report
 
-**Current Phase:** Stage 0: Project Foundation  
+**Current Phase:** Stage 1: Website Extraction Engine  
 **Repository:** [https://github.com/Krizh27/SiteScoop_v1](https://github.com/Krizh27/SiteScoop_v1)  
 **Date:** October 2026  
 **Status:** Completed & Verified  
@@ -9,9 +9,11 @@
 
 ## 1. Executive Summary
 
-Stage 0 establishes the complete foundational architecture for **SiteScoop AI**, an open-source, local-first website recovery and development agent. The project is designed to run entirely on the developer's workstation using a local **Gemma 4** model via **Ollama**, with zero mandatory dependencies on paid hosted LLM APIs.
+SiteScoop AI is an open-source, local-first website recovery and development agent.
+- **Stage 0 (Foundation)** established the React/Vite/Tailwind frontend, modular Express.js backend, and health monitor.
+- **Stage 1 (Website Extraction Engine)** adds a secure, SSRF-defended website scraper and asset downloader utilizing Axios, Cheerio, and `ipaddr.js`. It downloads public CSS, JS, images, fonts, and icons into an isolated workspace staging directory (`workspace/.staging/<id>/`) and produces a structured manifest.
 
-All foundational frontend, backend, workspace, configuration, and documentation components have been created, tested, verified, and pushed to GitHub.
+All Stage 1 backend services, controllers, routes, security guards, utilities, tests, and documentation have been implemented, tested, and verified.
 
 ---
 
@@ -19,75 +21,44 @@ All foundational frontend, backend, workspace, configuration, and documentation 
 
 ### 2.1 Backend Architecture (`server/`)
 - **Technology Stack**: Node.js (v18+), Express.js (v4.21.2), native JavaScript ES Modules (`"type": "module"`).
-- **Separation of Concerns**:
-  - `src/app.js`: Express application initialization, CORS configuration, request parsing, route mounting, and error handling.
-  - `src/server.js`: Server startup, port listening, environment variable ingestion, and graceful shutdown listeners (`SIGINT`, `SIGTERM`).
+- **Core Dependencies Added in Stage 1**:
+  - `axios`: Secure HTTP client for fetching HTML and binary assets.
+  - `cheerio`: High-performance static HTML DOM parsing.
+  - `ipaddr.js`: Strict IP address parsing and CIDR range classification for SSRF defense.
 - **Endpoints Implemented**:
-  - `GET /api/health`: Returns application status in structured JSON format:
-    ```json
-    {
-      "success": true,
-      "app": "SiteScoop AI",
-      "status": "running"
-    }
-    ```
-- **Layered Code Structure**:
-  - **Routes** (`src/routes/`): `health.routes.js` and `index.js` aggregator.
-  - **Controllers** (`src/controllers/`): `health.controller.js` handling request/response lifecycle.
-  - **Services** (`src/services/`): `health.service.js` containing business logic for system status.
-  - **Middleware** (`src/middleware/`):
-    - `errorHandler.js`: Centralized error-handling middleware formatting unhandled exceptions into structured JSON responses.
-    - `notFoundHandler.js`: 404 handler for undefined API routes.
-  - **Utilities** (`src/utils/`): `logger.js` providing formatted, timestamped logging.
-- **Middleware & Security**:
-  - Configured `cors` middleware scoped to `CLIENT_URL` (`http://localhost:5173`).
-  - Native `express.json()` request body parsing.
+  - `GET /api/health`: Returns application status in structured JSON format (`{ success: true, app: "SiteScoop AI", status: "running" }`).
+  - `POST /api/extract`: Accepts `{ "url": "https://example.com" }`, validates security, fetches HTML, parses assets, downloads files with concurrency limits, and stages files in `workspace/.staging/<id>/`.
 
----
+### 2.2 Security & SSRF Defense (`urlValidator.service.js`)
+- Protocol restriction: Only `http:` and `https:`.
+- Blocked embedded credentials in URLs (`user:pass@host`).
+- Blocked private, loopback, link-local, carrier-grade NAT, and reserved addresses for both IPv4 and IPv6.
+- Blocked cloud metadata endpoints (`169.254.169.254`, `metadata.google.internal`).
+- Full DNS resolution: Resolves hostnames via `dns.lookup({ all: true })` and checks *every* resolved IP address before making network connections.
+- Secure redirect handling: Manually intercepts redirects (HTTP 301/302/307/308), re-verifies each redirect target against SSRF rules, and enforces a hard 3-hop limit.
+- Safe execution policy: Downloaded JavaScript and assets are treated as inert data and **never executed**.
 
-### 2.2 Frontend Architecture (`client/`)
-- **Technology Stack**: React 18, Vite 6, Tailwind CSS v4 (`@tailwindcss/vite`), native ES Modules.
-- **Design System & Aesthetics**: Modern developer-tool dark theme with slate background (`#020617`), indigo/cyan accents, and responsive layout.
-- **Modular Components** (`src/components/`):
-  - `Header.jsx`: Top navigation containing project brand, `Stage 0` indicator, and a live pulsing API connection status pill (`connected` / `checking...` / `disconnected`).
-  - `UrlInputSection.jsx`: Target website URL input with disabled "Scoop Website" action button and informational callout explaining that website extraction activates in Stage 1.
-  - `SystemStatusCard.jsx`: Live monitor showing the `/api/health` response payload, connection status, and a manual "Ping GET /api/health" refresh trigger.
-  - `PipelineCards.jsx`: 4 modular cards visualizing the upcoming architecture pipeline stages with explicit "Planned" badges.
-  - `Footer.jsx`: Developer footer highlighting local execution, privacy-first design, and project status.
-- **State Management & Services**:
-  - `src/hooks/useHealthCheck.js`: Custom React hook with automatic periodic polling and manual refetch capabilities.
-  - `src/services/api.js`: Clean API client service wrapping `fetch` for backend communication.
-  - `src/pages/Dashboard.jsx`: Main landing view assembling all modular components.
-  - `src/assets/logo.svg`: Vector icon for SiteScoop AI branding.
+### 2.3 Resource Extraction (`resourceExtractor.service.js`)
+- Resolves relative URLs against document `<base href>` or the final redirected page URL.
+- Extracts page title, meta description, canonical URL, language, viewport, and favicon.
+- Discovers and deduplicates:
+  - Stylesheets (`<link rel="stylesheet">`, `@import`)
+  - Scripts (`<script src>`)
+  - Images (`<img src>`, `<img srcset>`, `<picture><source srcset>`)
+  - Fonts (`<link rel="preload" as="font">`, `.woff`, `.woff2`, `.ttf`, `.otf`, `.eot`)
+  - Manifests & touch icons
+  - Navigation links (`<a href>` collected without recursive crawling)
 
----
-
-### 2.3 Workspace & Staging Area
-- `workspace/.gitkeep`: Staging directory for reconstructed website assets and local project files (planned for Stages 1 and 2).
-
----
-
-### 2.4 Environment & Configuration
-- `sitescoop-ai/.env.example`: Root environment template.
-- `server/.env.example`: Backend configuration template with the following variables:
-  ```env
-  PORT=5000
-  CLIENT_URL=http://localhost:5173
-  WORKSPACE_DIR=../workspace
-  ```
-- `.gitignore`: Comprehensive git rules ignoring `node_modules/`, `dist/`, build artifacts, `.env` files, logs, and preserving `workspace/.gitkeep`.
-
----
-
-### 2.5 Documentation
-- `README.md`: Complete guide including project intro, tech stack, prerequisites, installation steps, independent startup commands for client and server, and verification instructions.
-- `docs/ARCHITECTURE.md`: Architectural breakdown detailing:
-  - Frontend responsibilities (implemented)
-  - Backend responsibilities (implemented)
-  - Website extraction layer (planned for Stage 1)
-  - Workspace and file management layer (planned for Stage 2)
-  - Local AI inference layer with Gemma 4 via Ollama (planned for Stage 3)
-  - Autonomous agent harness with Zod validation (planned for Stage 4)
+### 2.4 Asset Fetching & Staging (`assetFetcher.service.js`, `fileUtils.js`)
+- Isolated staging directory: `workspace/.staging/<extraction-id>/`.
+- Safe file writing: Sanitizes filenames against path traversal, preserves file extensions, and prevents filename collisions.
+- Budget constraints:
+  - Max concurrency: 4 simultaneous downloads.
+  - Max individual asset size: 5 MB.
+  - Max assets per extraction: 40 files.
+  - Max aggregate download budget: 25 MB.
+- Generates `manifest.json` detailing original URLs, final redirected URLs, page metadata, local relative paths, download statuses, and warnings.
+- Never exposes arbitrary absolute filesystem paths in the API response or manifest.
 
 ---
 
@@ -95,38 +66,20 @@ All foundational frontend, backend, workspace, configuration, and documentation 
 
 | Path | Purpose | Status |
 |---|---|---|
-| `.env.example` | Root environment template | Implemented |
-| `.gitignore` | Git exclusions for dependencies and secrets | Implemented |
-| `README.md` | Primary user documentation & commands | Implemented |
-| `IMPLEMENTATION_STATUS.md` | Detailed implementation ledger | Implemented |
-| `docs/ARCHITECTURE.md` | System design & subsystem roadmap | Implemented |
-| `workspace/.gitkeep` | Working directory placeholder | Implemented |
-| `server/package.json` | Backend dependencies & scripts | Implemented |
-| `server/.env.example` | Server environment template | Implemented |
-| `server/src/server.js` | Server entry point & listener | Implemented |
-| `server/src/app.js` | Express app configuration & middleware | Implemented |
-| `server/src/routes/health.routes.js` | Health check route (`/api/health`) | Implemented |
-| `server/src/routes/index.js` | Primary API router | Implemented |
-| `server/src/controllers/health.controller.js` | Health controller | Implemented |
-| `server/src/services/health.service.js` | Health service | Implemented |
-| `server/src/middleware/errorHandler.js` | Centralized error handler | Implemented |
-| `server/src/middleware/notFoundHandler.js` | 404 route handler | Implemented |
-| `server/src/utils/logger.js` | Timestamped logging utility | Implemented |
-| `client/package.json` | Frontend dependencies & scripts | Implemented |
-| `client/vite.config.js` | Vite config with React & Tailwind plugins | Implemented |
-| `client/index.html` | HTML document shell | Implemented |
-| `client/src/main.jsx` | React DOM mount point | Implemented |
-| `client/src/App.jsx` | Top-level React component | Implemented |
-| `client/src/index.css` | Tailwind CSS imports & base styles | Implemented |
-| `client/src/assets/logo.svg` | SVG brand asset | Implemented |
-| `client/src/pages/Dashboard.jsx` | Main dashboard layout | Implemented |
-| `client/src/components/Header.jsx` | Top navigation & live status pill | Implemented |
-| `client/src/components/UrlInputSection.jsx` | URL input & disabled action button | Implemented |
-| `client/src/components/SystemStatusCard.jsx` | API payload inspector & refresh trigger | Implemented |
-| `client/src/components/PipelineCards.jsx` | Roadmap cards for upcoming stages | Implemented |
-| `client/src/components/Footer.jsx` | Application footer | Implemented |
-| `client/src/hooks/useHealthCheck.js` | Custom health check polling hook | Implemented |
-| `client/src/services/api.js` | Fetch service for `/api/health` | Implemented |
+| `README.md` | Primary user documentation & API guide | Updated (Stage 1) |
+| `IMPLEMENTATION_STATUS.md` | Phase-by-phase implementation ledger | Updated (Stage 1) |
+| `docs/ARCHITECTURE.md` | System design & subsystem roadmap | Updated (Stage 1) |
+| `server/package.json` | Dependencies (`axios`, `cheerio`, `ipaddr.js`) | Updated (Stage 1) |
+| `server/src/routes/extraction.routes.js` | `POST /api/extract` route | Implemented (Stage 1) |
+| `server/src/controllers/extraction.controller.js` | Controller for extraction requests | Implemented (Stage 1) |
+| `server/src/services/extraction.service.js` | Orchestrator for extraction pipeline | Implemented (Stage 1) |
+| `server/src/services/urlValidator.service.js` | Strict SSRF & DNS validation | Implemented (Stage 1) |
+| `server/src/services/resourceExtractor.service.js` | Cheerio HTML parsing & extraction | Implemented (Stage 1) |
+| `server/src/services/assetFetcher.service.js` | Concurrency-governed asset downloader | Implemented (Stage 1) |
+| `server/src/utils/fileUtils.js` | Sanitization & staging utilities | Implemented (Stage 1) |
+| `workspace/.staging/` | Temporary staging area for extractions | Implemented (Stage 1) |
+| `server/src/routes/health.routes.js` | Health check endpoint | Implemented (Stage 0) |
+| `client/` | React + Vite + Tailwind frontend | Implemented (Stage 0) |
 
 ---
 
@@ -134,8 +87,7 @@ All foundational frontend, backend, workspace, configuration, and documentation 
 
 | Stage | Focus Area | Planned Libraries |
 |---|---|---|
-| **Stage 1** | **Website Extraction** | `cheerio`, `playwright` (headless browser asset discovery) |
-| **Stage 2** | **Workspace & Project Synthesis** | Node.js `fs/promises`, `path`, `diff`, `jszip` |
+| **Stage 2** | **Workspace Synthesis & Diffs** | Node.js `fs/promises`, `path`, `diff`, `jszip` |
 | **Stage 3** | **Local AI Inference** | Local **Ollama** running **Gemma 4** model |
 | **Stage 4** | **Autonomous Agent Dev Loop** | `zod` schema validation, iterative dev-server build checks |
 
@@ -143,10 +95,16 @@ All foundational frontend, backend, workspace, configuration, and documentation 
 
 ## 5. Verification Checklist
 
-- [x] Backend runs and listens on `http://localhost:5000`.
-- [x] Frontend dev server runs on `http://localhost:5173`.
-- [x] `GET /api/health` returns HTTP 200 with `{ "success": true, "app": "SiteScoop AI", "status": "running" }`.
-- [x] Undefined routes return structured 404 JSON response.
-- [x] Client production build succeeds without errors via `npm run build`.
-- [x] Clean dependency installations with **0 vulnerabilities**.
-- [x] Remote Git repository initialized and synchronized at `https://github.com/Krizh27/SiteScoop_v1`.
+- [x] Dependencies installed (`axios`, `cheerio`, `ipaddr.js`) with **0 vulnerabilities**.
+- [x] `POST /api/extract` implemented and verified with live websites (`https://example.com`, `https://httpbin.org`).
+- [x] Discovered stylesheets, scripts, images, fonts, and icons downloaded into `workspace/.staging/<id>/assets/`.
+- [x] `manifest.json` generated containing full page metadata and asset relative paths.
+- [x] SSRF defenses tested and verified:
+  - `http://localhost:5000` -> Blocked (HTTP 400).
+  - `http://127.0.0.1` -> Blocked (HTTP 400).
+  - `http://169.254.169.254` -> Blocked (HTTP 400).
+  - `http://192.168.1.1` -> Blocked (HTTP 400).
+  - `ftp://example.com` -> Blocked (HTTP 400).
+  - `http://user:pass@example.com` -> Blocked (HTTP 400).
+- [x] `GET /api/health` confirmed operational (`{ success: true, app: "SiteScoop AI", status: "running" }`).
+- [x] No breaking changes to existing Stage 0 components.
