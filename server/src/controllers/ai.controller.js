@@ -84,10 +84,21 @@ export const editProject = async (req, res, next) => {
       });
     }
 
+    const isTimeout =
+      message.includes('timed out') ||
+      message.includes('timeout');
+
+    if (isTimeout) {
+      return res.status(504).json({
+        success: false,
+        error: message
+      });
+    }
+
     const isOllamaError =
       message.includes('Ollama is offline') ||
       message.includes('not installed') ||
-      message.includes('timed out');
+      message.includes('ECONNREFUSED');
 
     if (isOllamaError) {
       return res.status(503).json({

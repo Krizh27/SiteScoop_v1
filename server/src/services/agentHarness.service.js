@@ -9,7 +9,7 @@ import { logger } from '../utils/logger.js';
 
 const OLLAMA_DEFAULT_HOST = 'http://localhost:11434';
 const MAX_AGENT_TURNS = 5;
-const OLLAMA_TIMEOUT_MS = parseInt(process.env.OLLAMA_TIMEOUT, 10) || 120000;
+const OLLAMA_TIMEOUT_MS = parseInt(process.env.OLLAMA_TIMEOUT, 10) || 300000; // 300s (5 min) for CPU inference
 
 /**
  * Tool definitions exposed to Gemma in Ollama's native tool-calling format.
@@ -69,7 +69,7 @@ export const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'replace_code',
-      description: 'Replace an exact snippet of code within an existing project file',
+      description: 'Replace a specific snippet of code within an existing project file. PREFERRED for targeted edits, adding styles, or inserting elements.',
       parameters: {
         type: 'object',
         properties: {
@@ -119,12 +119,25 @@ async function executeTool(projectId, toolName, args) {
     case 'replace_code': {
       const { filePath, targetCode, replacementCode } = args || {};
       const fileData = await readProjectFile(projectId, filePath);
-      if (!fileData.content.includes(targetCode)) {
-        throw new Error(`Target code snippet not found in "${filePath}".`);
+      const rawContent = fileData.content;
+
+      if (rawContent.includes(targetCode)) {
+        const updatedContent = rawContent.replace(targetCode, replacementCode);
+        const writeRes = await writeProjectFile(projectId, filePath, updatedContent);
+        return { success: true, filePath: writeRes.filePath, modified: true };
       }
-      const updatedContent = fileData.content.replace(targetCode, replacementCode);
-      const writeRes = await writeProjectFile(projectId, filePath, updatedContent);
-      return { success: true, filePath: writeRes.filePath, modified: true };
+
+      // Normalization check for CRLF / LF
+      const normContent = rawContent.replace(/\r\n/g, '\n');
+      const normTarget = (targetCode || '').replace(/\r\n/g, '\n');
+      if (normContent.includes(normTarget)) {
+        const normReplacement = (replacementCode || '').replace(/\r\n/g, '\n');
+        const updatedContent = normContent.replace(normTarget, normReplacement);
+        const writeRes = await writeProjectFile(projectId, filePath, updatedContent);
+        return { success: true, filePath: writeRes.filePath, modified: true };
+      }
+
+      throw new Error(`Target code snippet not found in "${filePath}".`);
     }
 
     case 'delete_file': {
@@ -167,10 +180,11 @@ You have CRUD tools to inspect and directly modify the recovered website codebas
 
 Guidelines:
 1. Always read a file before modifying it so you have the exact existing code.
-2. Apply clean, responsive, robust modern HTML/CSS.
-3. Keep external asset paths intact unless improving them.
-4. When you are done making changes, provide a concise summary of what you improved.
-5. Do not output internal thinking or reasoning tags.`;
+2. Prefer replace_code to insert or update specific code sections (such as adding a style block or a script/button) rather than rewriting the entire file from scratch.
+3. Apply clean, responsive, robust modern HTML/CSS.
+4. Keep external asset paths intact unless improving them.
+5. When you are done making changes, provide a concise summary of what you improved.
+6. Do not output internal thinking or reasoning tags.`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -205,7 +219,9 @@ ${userInstruction}`
           stream: false,
           think: false,
           options: {
-            num_predict: 1024,
+            num_ctx: 2048,
+            num_predict: 768,
+            num_thread: 10,
             temperature: 0.1
           }
         },
@@ -218,8 +234,12 @@ ${userInstruction}`
       if (err.code === 'ECONNREFUSED' || err.message?.includes('ECONNREFUSED')) {
         throw new Error(`Ollama is offline or unreachable at ${ollamaHost}.`);
       }
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        throw new Error(`Ollama request timed out after ${Math.round(OLLAMA_TIMEOUT_MS / 1000)}s on CPU. Try a more specific instruction or check CPU load.`);
+      }
       throw err;
     }
+
 
     const assistantMessage = response.data?.message;
     if (!assistantMessage) {

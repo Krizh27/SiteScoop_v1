@@ -108,9 +108,9 @@ export default function AgentStudio({ projectId, websiteTitle }) {
   }, [projectId]);
 
   const presetInstructions = [
-    'Add a dark mode toggle button and modernize the background styling',
-    'Add a clean responsive footer with "Recovered by SiteScoop AI"',
-    'Make headings high-contrast with modern typography and smooth margins'
+    'In index.html, add dark theme CSS styling and a dark mode toggle button',
+    'In index.html, add a clean responsive footer with "Recovered by SiteScoop AI"',
+    'Modernize the typography and layout styling in index.html'
   ];
 
   return (
@@ -160,7 +160,7 @@ export default function AgentStudio({ projectId, websiteTitle }) {
               rows={3}
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
-              placeholder="e.g. Inspect index.html and modernize the header with gradient text and a dark background..."
+              placeholder="e.g. In index.html, add dark theme CSS styling and a toggle button..."
               disabled={isAgentRunning}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans disabled:opacity-50 resize-none"
             />
@@ -209,20 +209,36 @@ export default function AgentStudio({ projectId, websiteTitle }) {
             )}
           </button>
 
-          {/* Agent Error Notification */}
-          {agentError && (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-950/40 p-3.5 text-xs text-rose-300 flex items-start gap-2.5">
-              <svg className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <div>
-                <span className="font-semibold text-rose-200">Agent Execution Error: </span>
-                {agentError}
-              </div>
+          {/* Running Status Note */}
+          {isAgentRunning && (
+            <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/40 p-3 text-[11px] text-indigo-300 flex items-center gap-2 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+              <span>Running local multi-turn CRUD tool loop on CPU (please allow 30–90 seconds)...</span>
             </div>
           )}
+
+          {/* Agent Error Notification */}
+          {agentError && (
+            <div className="rounded-xl border border-rose-500/30 bg-rose-950/40 p-3.5 text-xs text-rose-300 flex flex-col gap-1.5">
+              <div className="flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <div>
+                  <span className="font-semibold text-rose-200">Agent Execution Notice: </span>
+                  {agentError}
+                </div>
+              </div>
+              {agentError.toLowerCase().includes('time') && (
+                <p className="text-[11px] text-rose-300/80 pl-6">
+                  Tip: Local CPU models generate faster with targeted instructions (e.g. click one of the quick presets above).
+                </p>
+              )}
+            </div>
+          )}
+
 
           {/* Agent Execution Timeline & Results */}
           {agentResult && (
