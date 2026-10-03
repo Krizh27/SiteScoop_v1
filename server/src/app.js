@@ -3,6 +3,7 @@ import cors from 'cors';
 import recoveryRoutes from './routes/recovery.routes.js';
 import workspaceRoutes from './routes/workspace.routes.js';
 import agentRoutes from './routes/agent.routes.js';
+import aiRoutes from './routes/ai.routes.js';
 import { registerAllTools } from './agent/tools/index.js';
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api/recovery', recoveryRoutes);
 app.use('/api/workspace', workspaceRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/ai', aiRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,

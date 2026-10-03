@@ -41,8 +41,57 @@ cd sitescoop-ai/client
 npm run dev
 ```
 
+## Local AI Setup
+
+SiteScoop AI connects to local open-weights models (such as Gemma) running via Ollama without requiring paid cloud APIs.
+
+1. **Install Ollama**:
+   Download and install Ollama from [ollama.com](https://ollama.com).
+
+2. **Ensure configured model is available locally**:
+   Pull your desired Gemma model (e.g. `gemma4:e2b` or `gemma4:e4b`):
+   ```bash
+   ollama pull gemma4:e2b
+   ```
+
+3. **Configure environment variables**:
+   In `server/.env` (or root `.env`), configure your model settings:
+   ```env
+   OLLAMA_BASE_URL=http://localhost:11434
+   OLLAMA_MODEL=gemma4:e2b
+   OLLAMA_TIMEOUT_MS=120000
+   OLLAMA_TEMPERATURE=0.2
+   ```
+
+4. **Start the backend server**:
+   ```bash
+   cd sitescoop-ai/server
+   npm run dev
+   ```
+
+5. **Verify AI subsystem status**:
+   ```bash
+   curl http://localhost:5000/api/ai/status
+   ```
+   Expected response:
+   ```json
+   {
+     "success": true,
+     "ollama": { "available": true },
+     "model": "gemma4:e2b"
+   }
+   ```
+
+6. **Test model generation**:
+   ```bash
+   curl -X POST http://localhost:5000/api/ai/test \
+     -H "Content-Type: application/json" \
+     -d "{\"prompt\": \"Explain your role in SiteScoop AI in 3 concise bullet points.\"}"
+   ```
+
 ## Current Implementation Status
 - **Stage 0**: Project Foundation is complete.
 - **Stage 1**: Website Recovery Engine is complete. Recover deployed sites into a workspace.
 - **Stage 2**: Recovery Explorer & Workspace API is complete. Safely view and traverse recovered resources.
-- **Stage 3**: Agent Tool Layer is complete. An isolated, Zod-validated tool registry stands ready for the future AI model. Autonomous modification and AI interfaces are not yet implemented.
+- **Stage 3**: Agent Tool Layer is complete. An isolated, Zod-validated tool registry stands ready for the future AI model.
+- **Stage 4**: Local Gemma Model Adapter is complete. Configuration-driven Ollama connection with base system prompts, error sandboxing, and non-streaming model generation. Autonomous tool calling arrives in Stage 5.
