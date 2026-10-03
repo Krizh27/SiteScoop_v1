@@ -1,6 +1,6 @@
 # SiteScoop AI — Implementation Status Report
 
-**Current Phase:** Stage 1: Website Extraction Engine  
+**Current Phase:** Stage 2: Autonomous Agent Harness & Website Code CRUD Tools  
 **Repository:** [https://github.com/Krizh27/SiteScoop_v1](https://github.com/Krizh27/SiteScoop_v1)  
 **Date:** October 2026  
 **Status:** Completed & Verified  
@@ -11,9 +11,11 @@
 
 SiteScoop AI is an open-source, local-first website recovery and development agent.
 - **Stage 0 (Foundation)** established the React/Vite/Tailwind frontend, modular Express.js backend, and health monitor.
-- **Stage 1 (Website Extraction Engine)** adds a secure, SSRF-defended website scraper and asset downloader utilizing Axios, Cheerio, and `ipaddr.js`. It downloads public CSS, JS, images, fonts, and icons into an isolated workspace staging directory (`workspace/.staging/<id>/`) and produces a structured manifest.
-
-All Stage 1 backend services, controllers, routes, security guards, utilities, tests, and documentation have been implemented, tested, and verified.
+- **Stage 1 (Website Extraction Engine)** adds a secure, SSRF-defended website scraper and asset downloader utilizing Axios, Cheerio, and `ipaddr.js`. It downloads public CSS, JS, images, fonts, and icons into an isolated workspace directory (`workspace/projects/<id>/`) and produces a structured manifest.
+- **Stage 2 (Autonomous Agent Harness & Code CRUD Tools)** provides the local Gemma model (via Ollama) and developers with secure, sandboxed CRUD tools to inspect, view, edit, and replace code in recovered websites:
+  - Sandboxed Filesystem CRUD API: `list_files`, `read_file`, `write_file`, `replace_code`, `delete_file`.
+  - Multi-turn Autonomous Agent Loop: Gemma autonomously inspects cloned HTML/CSS files, performs targeted code modifications, and returns a verified summary.
+  - Interactive Agent Studio UI: File explorer, in-browser code editor with manual save, agent prompt controller with quick presets, and live execution tool timeline.
 
 ---
 
@@ -21,43 +23,31 @@ All Stage 1 backend services, controllers, routes, security guards, utilities, t
 
 ### 2.1 Backend Architecture (`server/`)
 - **Technology Stack**: Node.js (v18+), Express.js (v4.21.2), native JavaScript ES Modules (`"type": "module"`).
-- **Core Dependencies Added in Stage 1**:
-  - `axios`: Secure HTTP client for fetching HTML and binary assets.
+- **Core Dependencies**:
+  - `axios`: Secure HTTP client for fetching HTML, binary assets, and Ollama chat completions.
   - `cheerio`: High-performance static HTML DOM parsing.
   - `ipaddr.js`: Strict IP address parsing and CIDR range classification for SSRF defense.
 - **Endpoints Implemented**:
-  - `GET /api/health`: Returns application status in structured JSON format (`{ success: true, app: "SiteScoop AI", status: "running" }`).
-  - `POST /api/extract`: Accepts `{ "url": "https://example.com" }`, validates security, fetches HTML, parses assets, downloads files with concurrency limits, and stages files in `workspace/.staging/<id>/`.
+  - `GET /api/health`: Returns application status in structured JSON format.
+  - `POST /api/extract`: Accepts `{ "url": "https://example.com" }`, validates security, fetches HTML, parses assets, downloads files, and saves project files to `workspace/projects/{projectId}/`.
+  - `POST /api/ai/analyze`: One-shot website understanding and analysis prompt with Ollama.
+  - `POST /api/ai/edit`: Autonomous multi-turn agent harness loop executing CRUD tools.
+  - `GET /api/projects/:projectId/files`: Lists files in a sandboxed project workspace.
+  - `GET /api/projects/:projectId/file?path=...`: Reads raw code content of a project file.
+  - `POST /api/projects/:projectId/file`: Writes or updates code in a project file.
 
-### 2.2 Security & SSRF Defense (`urlValidator.service.js`)
-- Protocol restriction: Only `http:` and `https:`.
-- Blocked embedded credentials in URLs (`user:pass@host`).
-- Blocked private, loopback, link-local, carrier-grade NAT, and reserved addresses for both IPv4 and IPv6.
-- Blocked cloud metadata endpoints (`169.254.169.254`, `metadata.google.internal`).
-- Full DNS resolution: Resolves hostnames via `dns.lookup({ all: true })` and checks *every* resolved IP address before making network connections.
-- Secure redirect handling: Manually intercepts redirects (HTTP 301/302/307/308), re-verifies each redirect target against SSRF rules, and enforces a hard 3-hop limit.
-- Safe execution policy: Downloaded JavaScript and assets are treated as inert data and **never executed**.
+### 2.2 Autonomous Agent Harness (`agentHarness.service.js` & `projectFiles.service.js`)
+- **Native Ollama Tool Integration**: Exposes function definitions (`list_files`, `read_file`, `write_file`, `replace_code`) to local Gemma models (`gemma4:e2b`).
+- **Sandboxed File Operations**: Strict path containment enforcing that all reads and writes reside inside `workspace/projects/{projectId}/`. Traversal attempts (`../`, absolute paths) are blocked with `Access denied`.
+- **High-Performance Inference Settings**: Uses `think: false`, `num_predict: 1024`, and targeted temperature to ensure sub-minute response times on CPU hardware.
+- **Loop Orchestration**: Manages conversation history, invokes local tool handlers, sends `{ role: 'tool' }` responses back to Ollama, tracks modified files, and aggregates execution results.
 
-### 2.3 Resource Extraction (`resourceExtractor.service.js`)
-- Resolves relative URLs against document `<base href>` or the final redirected page URL.
-- Extracts page title, meta description, canonical URL, language, viewport, and favicon.
-- Discovers and deduplicates:
-  - Stylesheets (`<link rel="stylesheet">`, `@import`)
-  - Scripts (`<script src>`)
-  - Images (`<img src>`, `<img srcset>`, `<picture><source srcset>`)
-  - Fonts (`<link rel="preload" as="font">`, `.woff`, `.woff2`, `.ttf`, `.otf`, `.eot`)
-  - Manifests & touch icons
-  - Navigation links (`<a href>` collected without recursive crawling)
+### 2.3 Interactive Frontend Agent Studio (`AgentStudio.jsx`)
+- **File Explorer**: Tabbed view of project assets (`index.html`, stylesheets, scripts, manifest).
+- **Code Editor**: Live code editing with instant disk save (`Save Code`) and syntax styling.
+- **Agent Controller**: Instruction prompt with quick presets ("Add dark mode toggle", "Modernize hero typography", "Add responsive footer").
+- **Live Execution Timeline**: Step-by-step display of tools called by Gemma (`#1 read_file()`, `#2 write_file()`) with modified file chips and Gemma's explanation.
 
-### 2.4 Asset Fetching & Staging (`assetFetcher.service.js`, `fileUtils.js`)
-- Isolated staging directory: `workspace/.staging/<extraction-id>/`.
-- Safe file writing: Sanitizes filenames against path traversal, preserves file extensions, and prevents filename collisions.
-- Budget constraints:
-  - Max concurrency: 4 simultaneous downloads.
-  - Max individual asset size: 5 MB.
-  - Max assets per extraction: 40 files.
-  - Max aggregate download budget: 25 MB.
-- Generates `manifest.json` detailing original URLs, final redirected URLs, page metadata, local relative paths, download statuses, and warnings.
 - Never exposes arbitrary absolute filesystem paths in the API response or manifest.
 
 ---

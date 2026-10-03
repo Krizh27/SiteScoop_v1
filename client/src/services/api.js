@@ -84,3 +84,107 @@ export async function analyzeWebsite(projectId, question) {
     throw error;
   }
 }
+
+/**
+ * Fetch project files list.
+ * @param {string} projectId
+ * @returns {Promise<object>}
+ */
+export async function fetchProjectFiles(projectId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/files`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch project files:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch specific file content.
+ * @param {string} projectId
+ * @param {string} filePath
+ * @returns {Promise<object>}
+ */
+export async function fetchFileContent(projectId, filePath) {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/file?path=${encodeURIComponent(filePath)}`,
+      {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      }
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch file content:', error);
+    throw error;
+  }
+}
+
+/**
+ * Save / update file content.
+ * @param {string} projectId
+ * @param {string} filePath
+ * @param {string} content
+ * @returns {Promise<object>}
+ */
+export async function saveFileContent(projectId, filePath, content) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/file`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ path: filePath, content })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+    return data;
+  } catch (error) {
+    console.error('Failed to save file content:', error);
+    throw error;
+  }
+}
+
+/**
+ * Run autonomous agent harness loop with Gemma to inspect/modify code using CRUD tools.
+ * @param {string} projectId
+ * @param {string} instruction
+ * @returns {Promise<object>}
+ */
+export async function editProjectWithAgent(projectId, instruction) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ai/edit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ projectId, instruction })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+    return data;
+  } catch (error) {
+    console.error('Failed to run agent edit:', error);
+    throw error;
+  }
+}
+

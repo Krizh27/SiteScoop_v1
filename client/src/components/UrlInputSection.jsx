@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { extractWebsite, analyzeWebsite } from '../services/api.js';
+import AgentStudio from './AgentStudio.jsx';
 
 export default function UrlInputSection() {
   const [url, setUrl] = useState('');
@@ -317,6 +318,12 @@ export default function UrlInputSection() {
                 </div>
               )}
             </div>
+
+            {/* Autonomous Agent Harness Studio with CRUD Tools */}
+            <AgentStudio
+              projectId={result.projectId}
+              websiteTitle={result.metadata?.title || result.page?.title}
+            />
           </div>
         )}
       </div>
