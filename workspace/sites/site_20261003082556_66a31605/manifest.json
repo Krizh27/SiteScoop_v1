@@ -1,0 +1,80 @@
+{
+  "siteUrl": "https://qureshilawchambers.com/",
+  "finalUrl": "https://qureshilawchambers.com/",
+  "title": "Qureshi Law Chambers |Cyber & Criminal Lawyer in Surat",
+  "metadata": {
+    "title": "Qureshi Law Chambers |Cyber & Criminal Lawyer in Surat",
+    "description": "Expert criminal and cyber lawyer in Surat. Specializing in bail, FIR quashing, and cyber fraud matters. Qureshi Law Chambers – Gujarat High Court.",
+    "lang": "en",
+    "viewport": "width=device-width, initial-scale=1.0",
+    "canonical": ""
+  },
+  "html": {
+    "path": "index.html",
+    "size": 20975
+  },
+  "assets": {
+    "stylesheets": [
+      {
+        "url": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap",
+        "type": "stylesheet",
+        "status": "downloaded",
+        "localPath": "assets\\css\\8ef529013abbfaca",
+        "contentType": "text/css; charset=utf-8",
+        "size": 1678
+      },
+      {
+        "url": "https://qureshilawchambers.com/style.css",
+        "type": "stylesheet",
+        "status": "downloaded",
+        "localPath": "assets\\css\\ff497a5d09ccf0c2.css",
+        "contentType": "text/css",
+        "size": 18341
+      }
+    ],
+    "scripts": [
+      {
+        "url": "https://www.googletagmanager.com/gtag/js?id=G-6MGGGC0S16",
+        "type": "script",
+        "status": "downloaded",
+        "localPath": "assets\\js\\1cc8eeb19cc98234",
+        "contentType": "application/javascript; charset=UTF-8",
+        "size": 533771
+      }
+    ],
+    "images": [
+      {
+        "url": "https://qureshilawchambers.com/logo.png",
+        "type": "image",
+        "status": "downloaded",
+        "localPath": "assets\\images\\81143504cee5a8e7.png",
+        "contentType": "image/png",
+        "size": 105403
+      },
+      {
+        "url": "https://qureshilawchambers.com/favicon-32x32.png",
+        "type": "image",
+        "status": "downloaded",
+        "localPath": "assets\\images\\d73ccc0908d22fe5.png",
+        "contentType": "image/png",
+        "size": 1318
+      },
+      {
+        "url": "https://qureshilawchambers.com/favicon-16x16.png",
+        "type": "image",
+        "status": "downloaded",
+        "localPath": "assets\\images\\195bedf0e6224333.png",
+        "contentType": "image/png",
+        "size": 516
+      },
+      {
+        "url": "https://qureshilawchambers.com/favicon.png",
+        "type": "image",
+        "status": "failed",
+        "error": "HTTP 404"
+      }
+    ],
+    "fonts": [],
+    "other": []
+  }
+}
