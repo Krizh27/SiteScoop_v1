@@ -1,0 +1,41 @@
+import { z } from 'zod';
+
+// Reject navigation and absolute paths
+const safePathPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).*$/;
+
+export const projectIdSchema = z.string().regex(/^recovery-[a-zA-Z0-9-]+$/);
+
+export const projectPathSchema = z.string()
+  .min(1)
+  .regex(safePathPattern, 'Path traversal and absolute paths are forbidden')
+  .refine(val => !val.includes('\0'), 'Null bytes are forbidden');
+
+export const searchQuerySchema = z.string().min(1);
+
+export const listProjectFilesSchema = z.object({
+  projectId: projectIdSchema
+});
+
+export const readFileSchema = z.object({
+  projectId: projectIdSchema,
+  path: projectPathSchema
+});
+
+export const searchProjectSchema = z.object({
+  projectId: projectIdSchema,
+  query: searchQuerySchema,
+  maxResults: z.number().int().positive().optional().default(100)
+});
+
+export const getRecoveryReportSchema = z.object({
+  projectId: projectIdSchema
+});
+
+export const getFileMetadataSchema = z.object({
+  projectId: projectIdSchema,
+  path: projectPathSchema
+});
+
+export const analyzeDependenciesSchema = z.object({
+  projectId: projectIdSchema
+});

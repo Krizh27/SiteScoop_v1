@@ -45,3 +45,4 @@ npm run dev
 - **Stage 0**: Project Foundation is complete.
 - **Stage 1**: Website Recovery Engine is complete. Recover deployed sites into a workspace.
 - **Stage 2**: Recovery Explorer & Workspace API is complete. Safely view and traverse recovered resources.
+- **Stage 3**: Agent Tool Layer is complete. An isolated, Zod-validated tool registry stands ready for the future AI model. Autonomous modification and AI interfaces are not yet implemented.

@@ -2,8 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import recoveryRoutes from './routes/recovery.routes.js';
 import workspaceRoutes from './routes/workspace.routes.js';
+import agentRoutes from './routes/agent.routes.js';
+import { registerAllTools } from './agent/tools/index.js';
 
 const app = express();
+
+// Initialize tools
+registerAllTools();
 
 // Middleware
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
@@ -12,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use('/api/recovery', recoveryRoutes);
 app.use('/api/workspace', workspaceRoutes);
+app.use('/api/agent', agentRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
