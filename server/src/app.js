@@ -1,30 +1,25 @@
 import express from 'express';
 import cors from 'cors';
-import routes from './routes/index.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import { notFoundHandler } from './middleware/notFoundHandler.js';
+import recoveryRoutes from './routes/recovery.routes.js';
 
 const app = express();
 
-// Configure CORS for local frontend
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-app.use(cors({
-  origin: clientUrl,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
-// Configure JSON request body parsing
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json());
 
-// API Routes
-app.use('/api', routes);
+app.use('/api/recovery', recoveryRoutes);
 
-// Handle undefined routes
-app.use(notFoundHandler);
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    app: 'SiteScoop AI',
+    status: 'running'
+  });
+});
 
-// Centralized error handling
-app.use(errorHandler);
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, error: 'Internal Server Error' });
+});
 
 export default app;
