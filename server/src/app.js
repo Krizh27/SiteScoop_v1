@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import aiRoutes from './routes/aiRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
+import siteRoutes from './routes/siteRoutes.js';
 import { initializeTools } from './tools/init.js';
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use('/api/ai', aiRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/sites', siteRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

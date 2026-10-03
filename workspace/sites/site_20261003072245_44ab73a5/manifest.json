@@ -1,0 +1,41 @@
+{
+  "siteUrl": "https://example.com",
+  "finalUrl": "https://example.com/",
+  "title": "Example Domain",
+  "metadata": {
+    "title": "Example Domain",
+    "description": "",
+    "lang": "en",
+    "viewport": "width=device-width,initial-scale=1",
+    "canonical": ""
+  },
+  "html": {
+    "path": "index.html",
+    "size": 577
+  },
+  "assets": {
+    "stylesheets": [],
+    "scripts": [
+      {
+        "url": "https://example.com/s.js",
+        "type": "script",
+        "status": "downloaded",
+        "localPath": "assets\\js\\6146ece8aca14fa1.js",
+        "contentType": "text/javascript; charset=utf-8",
+        "size": 1963
+      }
+    ],
+    "images": [
+      {
+        "url": "data:,",
+        "type": "image",
+        "status": "downloaded",
+        "localPath": "assets\\images\\43fbe45b75e6618e",
+        "contentType": "text/plain;charset=US-ASCII",
+        "size": 0
+      }
+    ],
+    "fonts": [],
+    "other": []
+  }
+}
