@@ -115,6 +115,32 @@ curl -X POST http://localhost:5000/api/agent/run \
   }'
 ```
 
+## AI Project Inspector
+
+SiteScoop AI includes an evidence-backed Project Inspector answering:
+> *"What is wrong, incomplete, suspicious, or potentially broken in this recovered website?"*
+
+### Features
+- **Deterministic Pre-Checks**: Analyzes recovery failures, assets, HTML structure, and dependency manifests without LLM hallucinations.
+- **Evidence-First Guarantee**: Every finding must contain concrete citations from project files or recovery reports. Unsupported claims are rejected.
+- **Strict Normalization**: Validates severity (`info`, `warning`, `error`), category, confidence (`low`, `medium`, `high`), deduplicates related issues, and caps maximum findings.
+- **Interactive UI**: View findings, inspect affected files in the workspace viewer with a single click, and review inspection activity.
+
+### Run Inspector Endpoint
+```bash
+curl -X POST http://localhost:5000/api/inspector/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "projectId": "recovery-20261003060539-809",
+    "focus": ["recovery", "assets", "html"]
+  }'
+```
+
+### Fetch Latest Report
+```bash
+curl http://localhost:5000/api/inspector/projects/recovery-20261003060539-809/report
+```
+
 ## Current Implementation Status
 - **Stage 0**: Project Foundation is complete.
 - **Stage 1**: Website Recovery Engine is complete. Recover deployed sites into a workspace.
@@ -122,3 +148,4 @@ curl -X POST http://localhost:5000/api/agent/run \
 - **Stage 3**: Agent Tool Layer is complete. An isolated, Zod-validated tool registry stands ready for the future AI model.
 - **Stage 4**: Local Gemma Model Adapter is complete. Configuration-driven Ollama connection with base system prompts, error sandboxing, and non-streaming model generation.
 - **Stage 5**: Agent Harness is complete. Autonomous multi-step read-only reasoning loop, Zod action protocol, repeat-call detection, step limits, and Developer Agent Panel.
+- **Stage 6**: AI Project Inspector is complete. Deterministic pre-checks, evidence-backed finding schema, Zod validation, normalization, and React Inspector Panel.

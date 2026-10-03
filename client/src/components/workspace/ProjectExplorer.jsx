@@ -4,14 +4,15 @@ import FileTree from './FileTree';
 import FileViewer from './FileViewer';
 import RecoveryReport from './RecoveryReport';
 import AIDeveloperPanel from './AIDeveloperPanel';
+import InspectorPanel from '../inspector/InspectorPanel';
 import { getFileTree } from '../../services/workspaceApi';
-import { ArrowLeft, FileText, Info } from 'lucide-react';
+import { ArrowLeft, FileText, Info, ShieldAlert } from 'lucide-react';
 
 const ProjectExplorer = () => {
   const { projectId } = useParams();
   const [tree, setTree] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [showReport, setShowReport] = useState(true);
+  const [activeTab, setActiveTab] = useState('inspector'); // 'viewer' | 'report' | 'inspector'
 
   useEffect(() => {
     getFileTree(projectId).then(setTree).catch(console.error);
@@ -19,7 +20,18 @@ const ProjectExplorer = () => {
 
   const handleSelectFile = (node) => {
     setSelectedFile(node);
-    setShowReport(false);
+    setActiveTab('viewer');
+  };
+
+  const handleSelectFileByPath = (filePath) => {
+    const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const fileName = cleanPath.split('/').pop();
+    setSelectedFile({
+      path: cleanPath,
+      name: fileName,
+      type: 'file'
+    });
+    setActiveTab('viewer');
   };
 
   return (
@@ -35,14 +47,45 @@ const ProjectExplorer = () => {
           <h1 className="font-bold text-gray-800">Workspace Explorer</h1>
           <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 font-mono">{projectId}</span>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-2">
           <button 
-            onClick={() => setShowReport(true)}
-            className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${showReport ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
+            onClick={() => setActiveTab('inspector')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeTab === 'inspector'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
           >
-            <Info size={16} />
-            Report
+            <ShieldAlert size={15} />
+            AI Inspection
           </button>
+
+          <button 
+            onClick={() => setActiveTab('report')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              activeTab === 'report'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Info size={15} />
+            Recovery Report
+          </button>
+
+          {selectedFile && (
+            <button 
+              onClick={() => setActiveTab('viewer')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                activeTab === 'viewer'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <FileText size={15} />
+              <span>{selectedFile.name}</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -58,9 +101,14 @@ const ProjectExplorer = () => {
           </div>
         </div>
 
-        {/* Center: Viewer/Report */}
-        <div className="flex-1 bg-white border-r border-gray-200 flex flex-col min-w-0">
-          {showReport ? (
+        {/* Center: Viewer / Report / Inspector */}
+        <div className="flex-1 bg-white border-r border-gray-200 flex flex-col min-w-0 overflow-hidden">
+          {activeTab === 'inspector' ? (
+            <InspectorPanel
+              projectId={projectId}
+              onSelectFile={handleSelectFileByPath}
+            />
+          ) : activeTab === 'report' ? (
             <RecoveryReport projectId={projectId} />
           ) : (
             <FileViewer projectId={projectId} fileNode={selectedFile} />

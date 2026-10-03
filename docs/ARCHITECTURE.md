@@ -106,6 +106,45 @@ Final Answer (markdown)
    - Runaway loops are blocked via step limits (`AGENT_MAX_STEPS`) and repeated tool call detection.
 3. **No Private Chain-of-Thought Leaks**: Internal prompts and hidden thoughts are omitted from the client response. Only tool activity names and the final answer are returned to the user.
 
+## AI Project Inspector
+
+In Stage 6, we implemented the **AI Project Inspector** (`server/src/inspector/`). The inspector analyzes recovered projects for concrete broken references, missing assets, structural flaws, and recovery limitations.
+
+### Architecture
+
+```text
+                 ┌──────────────────────┐
+                 │ Recovered Website    │
+                 └──────────┬───────────┘
+                            │
+                 ┌──────────▼───────────┐
+                 │ Deterministic Checks │ (recovery, HTML, assets, dependencies)
+                 └──────────┬───────────┘
+                            │
+                     Evidence/Signals
+                            │
+                 ┌──────────▼───────────┐
+                 │    Gemma Agent       │ (read-only tools & inspection prompt)
+                 └──────────┬───────────┘
+                            │
+                    Structured Findings
+                            │
+                 ┌──────────▼───────────┐
+                 │ Finding Normalizer   │ (schema validation, deduplication, ranking)
+                 └──────────┬───────────┘
+                            │
+                 ┌──────────▼───────────┐
+                 │ Inspector Report     │
+                 └──────────────────────┘
+```
+
+### Core Inspection Principles
+
+1. **Evidence-First Requirement**: Every finding must cite concrete, verifiable evidence (e.g. download failure in `recovery.json`, broken relative tag in `index.html`, missing `<meta name="viewport">`). Unsupported claims are discarded.
+2. **Distinguish Fact from Inference**: The inspector does not declare something broken merely because it looks unusual. Missing backend code or absent `package.json` manifests are reported as architectural limitations of frontend extraction rather than software bugs.
+3. **Deterministic Guardrails**: Static checks run prior to model reasoning to provide grounded factual anchors, ensuring key issues are identified even if the local model is brief or offline.
+4. **Interactive File Navigation**: Every finding lists affected workspace files; clicking a file in the UI opens the file directly in the existing code viewer.
+
 ## Planned Future Components
 
 ### Code Modification & Export (Future)
