@@ -110,6 +110,7 @@ export async function analyzeWebsite(projectId, question) {
   // 2. Construct system and user prompts
   const systemPrompt = `You are Gemma, an expert website analysis assistant for SiteScoop AI.
 Analyze the provided website HTML and CSS to inspect, debug, and suggest concrete architectural, visual, and code improvements.
+Do not output internal thinking processes or <think> tags. Be concise, direct, and robust.
 You must structure your response with these clear sections:
 1. Short website summary
 2. Three observations about the website
@@ -135,7 +136,7 @@ Please analyze this website and provide:
 3. Three practical improvement suggestions
 4. One suggested CSS improvement`;
 
-  // 3. Dispatch to local Ollama API
+  // 3. Dispatch to local Ollama API with thinking disabled for fast, robust responses
   try {
     const response = await axios.post(
       `${ollamaHost}/api/chat`,
@@ -145,7 +146,12 @@ Please analyze this website and provide:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        stream: false
+        stream: false,
+        think: false, // Disables extended thinking/reasoning loops for fast direct answers
+        options: {
+          num_predict: parseInt(process.env.OLLAMA_NUM_PREDICT, 10) || 768,
+          temperature: 0.2
+        }
       },
       {
         timeout: OLLAMA_TIMEOUT_MS,
@@ -155,10 +161,13 @@ Please analyze this website and provide:
       }
     );
 
-    const messageContent = response.data?.message?.content;
+    let messageContent = response.data?.message?.content;
     if (!messageContent) {
       throw new Error('Received empty or malformed response from Ollama.');
     }
+
+    // Clean any residual <think> blocks if produced by the model
+    messageContent = messageContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     logger.info(`Completed AI analysis for project "${projectId}" using "${modelName}".`);
 
