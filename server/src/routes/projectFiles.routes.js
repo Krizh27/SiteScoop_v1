@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   getProjectFiles,
   getFileContent,
-  saveFileContent
+  saveFileContent,
+  getProjectPreview
 } from '../controllers/projectFiles.controller.js';
 
 const router = Router();
@@ -16,4 +17,8 @@ router.get('/projects/:projectId/file', getFileContent);
 // POST /api/projects/:projectId/file
 router.post('/projects/:projectId/file', saveFileContent);
 
+// GET /api/projects/:projectId/preview
+router.get('/projects/:projectId/preview', getProjectPreview);
+
 export default router;
+

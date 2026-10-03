@@ -4,6 +4,7 @@ import {
   writeProjectFile,
   deleteProjectFile
 } from '../services/projectFiles.service.js';
+import { getPreviewUrl, setActiveProject } from '../services/previewServer.service.js';
 
 function handleProjectError(error, res, next) {
   const msg = error.message || 'File operation failed';
@@ -64,4 +65,20 @@ export const saveFileContent = async (req, res, next) => {
     handleProjectError(error, res, next);
   }
 };
+
+/**
+ * Get live preview URL on port 5050.
+ * GET /api/projects/:projectId/preview
+ */
+export const getProjectPreview = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    setActiveProject(projectId);
+    const previewUrl = getPreviewUrl(projectId);
+    res.status(200).json({ success: true, projectId, previewUrl });
+  } catch (error) {
+    handleProjectError(error, res, next);
+  }
+};
+
 

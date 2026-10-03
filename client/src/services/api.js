@@ -188,3 +188,14 @@ export async function editProjectWithAgent(projectId, instruction) {
   }
 }
 
+/**
+ * Get direct live preview URL for project on port 5050.
+ * @param {string} projectId
+ * @returns {string}
+ */
+export function getProjectPreviewUrl(projectId) {
+  const previewPort = import.meta.env.VITE_PREVIEW_PORT || 5050;
+  return `http://localhost:${previewPort}/projects/${encodeURIComponent(projectId)}/`;
+}
+
+
