@@ -4,6 +4,7 @@ import aiRoutes from './routes/aiRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
 import siteRoutes from './routes/siteRoutes.js';
 import { initializeTools } from './tools/init.js';
+import path from 'path';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use('/api/ai', aiRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/sites', siteRoutes);
+app.use('/preview', express.static(path.resolve(process.cwd(), 'workspace', 'sites')));
 
 app.get('/api/health', (req, res) => {
   res.json({

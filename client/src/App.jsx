@@ -1,34 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Terminal, Globe, ShieldCheck, Zap, Cpu, CheckCircle2, AlertTriangle, FileCode2, Play, Info } from 'lucide-react';
+import { ArrowRight, Globe, Code2, Sparkles, Wand2, Shield, RefreshCcw, Command, Activity, Cpu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const [url, setUrl] = useState('https://qureshilawchambers.com');
   const [siteId, setSiteId] = useState(null);
-  
-  // App States: 'landing', 'recovering', 'recovered', 'analyzing', 'complete'
   const [appState, setAppState] = useState('landing');
-  
   const [ingestStatus, setIngestStatus] = useState([]);
   const [analysisSteps, setAnalysisSteps] = useState([]);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [fixResult, setFixResult] = useState(null);
   const [error, setError] = useState(null);
+  const terminalRef = useRef(null);
+
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [analysisSteps]);
 
   const handleRecover = async () => {
     try {
       if (!url) return;
-      
       setError(null);
       setSiteId(null);
       setAppState('recovering');
-      setIngestStatus([
-        { msg: 'Fetching HTML', done: true },
-        { msg: 'Parsing DOM', done: true },
-        { msg: 'Extracting assets', done: true },
-        { msg: 'Building workspace', done: false }
-      ]);
+      setIngestStatus([{ msg: 'Establishing connection...', done: true }]);
       setAnalysisResult(null);
       setAnalysisSteps([]);
+
+      setTimeout(() => setIngestStatus(s => [...s, { msg: 'Parsing DOM structure', done: true }]), 600);
+      setTimeout(() => setIngestStatus(s => [...s, { msg: 'Resolving dependency graphs', done: true }]), 1200);
       
       const res = await fetch('http://localhost:5000/api/sites/ingest', {
         method: 'POST',
@@ -37,16 +40,11 @@ function App() {
       });
       
       const data = await res.json();
-      
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to recover site');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to recover site');
 
       setSiteId(data.siteId);
-      
-      setIngestStatus(prev => prev.map(s => ({ ...s, done: true })));
-      setTimeout(() => setAppState('recovered'), 800);
-      
+      setIngestStatus(s => [...s, { msg: 'Extracting assets', done: true }, { msg: 'Isolating workspace', done: true }]);
+      setTimeout(() => setAppState('recovered'), 1000);
     } catch (err) {
       setError(err.message);
       setAppState('landing');
@@ -57,7 +55,7 @@ function App() {
     try {
       setError(null);
       setAppState('analyzing');
-      setAnalysisSteps([{ text: 'Initializing Gemma Agent...', type: 'info' }]);
+      setAnalysisSteps([{ text: 'Connecting to Gemma 4 Intelligence Core...', type: 'info' }]);
       
       const res = await fetch('http://localhost:5000/api/agent/analyze', {
         method: 'POST',
@@ -66,234 +64,332 @@ function App() {
       });
       
       const data = await res.json();
-      
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to analyze site');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to analyze site');
 
       setAnalysisSteps(data.steps || []);
       setAnalysisResult(data.response);
       setAppState('complete');
     } catch (err) {
       setError(err.message);
-      setAppState('recovered'); // fallback to recovered so they can retry
+      setAppState('recovered');
     }
   };
 
+  const handleFix = async () => {
+    try {
+      setError(null);
+      setAppState('fixing');
+      setAnalysisSteps([{ text: 'Initializing Auto-Fix Protocol...', type: 'info' }]);
+      
+      const res = await fetch('http://localhost:5000/api/agent/fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteId, message: 'Fix the issues identified in the report.' })
+      });
+      
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to fix site');
+
+      setAnalysisSteps(data.steps || []);
+      setFixResult(data.response);
+      setAppState('fixed');
+    } catch (err) {
+      setError(err.message);
+      setAppState('complete');
+    }
+  };
+
+  const springConfig = { type: "spring", stiffness: 300, damping: 30 };
+
   return (
-    <div className="min-h-screen bg-[#08090b] text-neutral-300 font-sans selection:bg-violet-900 selection:text-white">
-      {/* Top Navbar */}
-      <nav className="border-b border-[#1f2229] bg-[#0f1115]/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[#000000] text-zinc-300 font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
+      
+      {/* Smooth Water Background */}
+      <div className="bg-liquid-1"></div>
+      <div className="bg-liquid-2"></div>
+
+      {/* Sleek Header */}
+      <motion.nav 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={springConfig}
+        className="fixed top-0 w-full z-50 px-6 py-4"
+      >
+        <div className="max-w-[90rem] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-violet-600/20 p-2 rounded-lg border border-violet-500/30">
-              <Terminal className="w-5 h-5 text-violet-400" />
+            <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/10">
+              <Command className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-white font-bold text-lg tracking-wide leading-tight">SITESCOOP</h1>
-              <p className="text-xs text-neutral-500 font-medium tracking-widest uppercase">AI Website Intelligence</p>
-            </div>
+            <span className="text-white font-semibold tracking-tight text-lg">SiteScoop</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/30 border border-cyan-900/50">
-            <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)] animate-pulse"></div>
-            <span className="text-xs font-semibold text-cyan-400 tracking-wider">Gemma 4 &bull; CONNECTED</span>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+            <span className="text-xs font-medium text-zinc-400">Gemma 4 Online</span>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        {error && (
-          <div className="mb-8 p-4 bg-red-950/40 border border-red-900/50 rounded-lg flex gap-3 items-start animate-in fade-in slide-in-from-top-4">
-            <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-red-400 font-semibold mb-1">System Error</h3>
-              <p className="text-red-300/80 text-sm font-mono break-all">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {/* 1. LANDING & RECOVERY (Shown before analysis starts) */}
-        {(appState === 'landing' || appState === 'recovering' || appState === 'recovered') && (
-          <div className="max-w-3xl mx-auto mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            
-            {appState === 'landing' && (
-              <div className="text-center mb-12">
-                <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
-                  From deployed URL <span className="text-[#1f2229] mx-2">→</span> recoverable code <span className="text-[#1f2229] mx-2">→</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">AI insight</span>
-                </h2>
+      <main className="max-w-[90rem] mx-auto px-6 pt-32 pb-12 relative z-10">
+        
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20, scale: 0.95 }} 
+              animate={{ opacity: 1, y: 0, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mb-12 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-4 items-start backdrop-blur-xl max-w-4xl mx-auto"
+            >
+              <div className="bg-red-500/20 p-2 rounded-full">
+                <RefreshCcw className="w-4 h-4 text-red-400" />
               </div>
-            )}
-
-            <div className="bg-[#0f1115] border border-[#1f2229] rounded-2xl p-8 shadow-2xl shadow-black/50 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 via-cyan-500 to-violet-600 opacity-20"></div>
-              
-              <div className="mb-6">
-                <label className="flex items-center gap-2 text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-3">
-                  <Globe className="w-4 h-4" /> Target Website
-                </label>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input 
-                    type="text" 
-                    disabled={appState !== 'landing'}
-                    className="flex-1 bg-[#08090b] border border-[#1f2229] rounded-lg px-4 py-3.5 text-white focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all font-mono disabled:opacity-50"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://example.com"
-                  />
-                  {appState === 'landing' && (
-                    <button 
-                      onClick={handleRecover}
-                      className="bg-violet-600 hover:bg-violet-500 text-white font-semibold px-8 py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 group shadow-[0_0_20px_rgba(124,58,237,0.2)] hover:shadow-[0_0_25px_rgba(124,58,237,0.4)]"
-                    >
-                      <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
-                      SCOOP SITE
-                    </button>
-                  )}
-                </div>
+              <div className="pt-1">
+                <h3 className="text-red-200 font-medium mb-1 text-sm">System Error</h3>
+                <p className="text-red-400/80 text-sm">{error}</p>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* STAGE 1: Premium Landing / Recovery */}
+        <AnimatePresence mode="wait">
+          {(appState === 'landing' || appState === 'recovering' || appState === 'recovered') && (
+            <motion.div 
+              key="landing"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-3xl mx-auto mt-10"
+            >
               {appState === 'landing' && (
-                <div className="flex flex-wrap justify-center gap-6 mt-8 pt-6 border-t border-[#1f2229]/50">
-                  <div className="flex items-center gap-2 text-sm text-neutral-400"><CheckCircle2 className="w-4 h-4 text-emerald-500"/> No repository required</div>
-                  <div className="flex items-center gap-2 text-sm text-neutral-400"><CheckCircle2 className="w-4 h-4 text-emerald-500"/> Cheerio-powered recovery</div>
-                  <div className="flex items-center gap-2 text-sm text-neutral-400"><CheckCircle2 className="w-4 h-4 text-emerald-500"/> Gemma-powered agent analysis</div>
+                <div className="text-center mb-16 z-10 relative">
+                  <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.8, ease: "easeOut" }} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs text-zinc-300 mb-8 backdrop-blur-md shadow-xl">
+                    <Sparkles className="w-3.5 h-3.5 text-white" /> Intelligence Platform
+                  </motion.div>
+                  
+                  <h1 className="text-5xl md:text-7xl font-semibold text-white mb-6 tracking-tight leading-tight flex flex-wrap justify-center gap-x-4">
+                    {["Analyze", "and", "fix", "deployed", "code."].map((word, idx) => (
+                      <motion.span 
+                        key={idx}
+                        initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ delay: 0.2 + idx * 0.1, ...springConfig }}
+                        className="inline-block"
+                      >
+                        {word}
+                      </motion.span>
+                    ))}
+                  </h1>
+
+                  <motion.p 
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 1 }}
+                    className="text-zinc-400 text-lg md:text-xl font-light"
+                  >
+                    Transform any URL into an isolated workspace and deploy autonomous AI to audit, refactor, and apply fixes in real-time.
+                  </motion.p>
                 </div>
               )}
 
-              {(appState === 'recovering' || appState === 'recovered') && (
-                <div className="mt-8 bg-[#08090b] border border-[#1f2229] rounded-lg p-6 font-mono text-sm">
-                  <h3 className="text-violet-400 font-semibold mb-4 flex items-center gap-2">
-                    {appState === 'recovering' ? <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" /> : <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                    {appState === 'recovering' ? 'RECOVERING WEBSITE' : 'SITE RECOVERED'}
-                  </h3>
-                  
-                  <div className="space-y-3 pl-1">
-                    {ingestStatus.map((step, i) => (
-                      <div key={i} className={`flex items-center gap-3 ${step.done ? 'text-neutral-300' : 'text-neutral-600'}`}>
-                        {step.done ? <span className="text-emerald-500">✓</span> : <span className="animate-spin text-violet-500">◉</span>}
-                        {step.msg}
-                      </div>
-                    ))}
-                  </div>
+              <motion.div 
+                layoutId="main-card"
+                whileHover={{ y: -15, scale: 1.02, transition: springConfig }}
+                className="bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-3 shadow-2xl relative z-10"
+              >
+                {/* Wavy Blob Effect Behind Card */}
+                <motion.div 
+                  animate={{ 
+                    borderRadius: ["40% 60% 70% 30% / 40% 50% 60% 50%", "60% 40% 30% 70% / 60% 30% 70% 40%", "40% 60% 70% 30% / 40% 50% 60% 50%"],
+                  }}
+                  transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                  className="absolute -inset-4 bg-white/5 blur-3xl -z-10 pointer-events-none"
+                />
 
-                  {appState === 'recovered' && siteId && (
-                    <div className="mt-8 pt-6 border-t border-[#1f2229] animate-in fade-in slide-in-from-bottom-4">
-                      <div className="flex flex-wrap gap-4 mb-6">
-                        <div className="bg-[#0f1115] px-3 py-1.5 rounded border border-[#1f2229] text-xs text-neutral-400">
-                          ID: <span className="text-white">{siteId.split('_').pop()}</span>
+                <div className="bg-[#111111] rounded-[1.5rem] p-8 lg:p-10 border border-white/5 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex flex-col sm:flex-row gap-4 mb-2">
+                      <div className="relative flex-1">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                          <Globe className="w-5 h-5" />
                         </div>
-                        <div className="bg-[#0f1115] px-3 py-1.5 rounded border border-[#1f2229] text-xs text-neutral-400">
-                          WORKSPACE ACTIVE
-                        </div>
+                        <input 
+                          type="text" 
+                          disabled={appState !== 'landing'}
+                          className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl pl-12 pr-6 py-5 text-white text-lg focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all disabled:opacity-50 font-light shadow-inner"
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                        />
                       </div>
                       
-                      <button 
-                        onClick={handleAnalyze}
-                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                      {appState === 'landing' && (
+                        <motion.button 
+                          whileHover={{ scale: 1.05, y: -5 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={handleRecover}
+                          className="bg-white text-black font-medium px-8 py-5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(255,255,255,0.2)]"
+                        >
+                          Recover <ArrowRight className="w-5 h-5" />
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {(appState === 'recovering' || appState === 'recovered') && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-8 pt-8 border-t border-white/5"
                       >
-                        <Cpu className="w-5 h-5" /> 
-                        ANALYZE WITH GEMMA
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                        <div className="space-y-4">
+                          {ingestStatus.map((step, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-center gap-4 text-sm font-medium">
+                              {step.done ? (
+                                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                                </div>
+                              ) : (
+                                <div className="w-6 h-6 rounded-full border border-white/20 border-t-white animate-spin"></div>
+                              )}
+                              <span className={step.done ? 'text-zinc-300' : 'text-zinc-500'}>{step.msg}</span>
+                            </motion.div>
+                          ))}
+                        </div>
 
-        {/* 2. ANALYSIS SCREEN (Two-column layout) */}
-        {(appState === 'analyzing' || appState === 'complete') && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in zoom-in-95 duration-500">
-            
-            {/* LEFT COLUMN: AGENT ACTIVITY */}
-            <div className="lg:col-span-4 flex flex-col h-[calc(100vh-10rem)] sticky top-24">
-              <div className="bg-[#0f1115] border border-[#1f2229] rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
-                <div className="px-4 py-3 border-b border-[#1f2229] bg-[#08090b]/50 flex justify-between items-center">
-                  <h3 className="font-semibold text-cyan-400 flex items-center gap-2 text-sm tracking-widest uppercase">
-                    <Activity className="w-4 h-4" /> Gemma Agent
-                  </h3>
-                  {appState === 'analyzing' && <div className="text-xs text-cyan-500/70 animate-pulse">RUNNING</div>}
+                        {appState === 'recovered' && (
+                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-10 flex flex-col items-center">
+                            <motion.button 
+                              whileHover={{ scale: 1.05, y: -5 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={handleAnalyze}
+                              className="w-full bg-white text-black font-medium px-8 py-5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(255,255,255,0.2)]"
+                            >
+                              <Activity className="w-5 h-5" /> Deploy Analysis
+                            </motion.button>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                
-                <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-3 bg-[#08090b]">
-                  {analysisSteps.map((step, idx) => {
-                    if (step.type === 'tool_call') {
-                      return (
-                        <div key={idx} className="flex gap-2 text-neutral-400">
-                          <span className="text-neutral-600 shrink-0">[{step.step}]</span>
-                          <span className="text-cyan-400 shrink-0">▶</span>
-                          <span className="break-all">{step.toolName}({JSON.stringify(step.arguments)})</span>
-                        </div>
-                      );
-                    }
-                    if (step.type === 'tool_result') {
-                      return (
-                        <div key={idx} className="flex gap-2 text-emerald-500 pl-8 opacity-80">
-                          <span className="shrink-0">✓</span>
-                          <span>Completed</span>
-                        </div>
-                      );
-                    }
-                    if (step.type === 'final_response') {
-                      return (
-                        <div key={idx} className="flex gap-2 text-violet-400 mt-4 border-t border-[#1f2229] pt-4">
-                          <CheckCircle2 className="w-4 h-4 shrink-0" />
-                          <span>Analysis compiled successfully.</span>
-                        </div>
-                      );
-                    }
-                    if (step.type === 'info') {
-                      return <div key={idx} className="text-neutral-500 italic">{step.text}</div>;
-                    }
-                    return null;
-                  })}
-                  {appState === 'analyzing' && (
-                    <div className="flex gap-2 text-cyan-500/50 pt-2 pl-8">
-                      <span className="animate-spin">◉</span>
-                      <span className="animate-pulse">analyzing evidence...</span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* STAGE 2 & 3: Minimal Layout */}
+        <AnimatePresence>
+          {(appState === 'analyzing' || appState === 'complete' || appState === 'fixing' || appState === 'fixed') && (
+            <motion.div 
+              key="analysis"
+              initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[80vh]"
+            >
+              
+              {/* LEFT: Sleek Terminal */}
+              <div className="lg:col-span-3 flex flex-col h-full">
+                <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl flex flex-col h-full overflow-hidden p-2">
+                  <div className="bg-[#111111] rounded-2xl flex-1 flex flex-col overflow-hidden border border-white/5">
+                    <div className="px-5 py-4 border-b border-white/5 flex justify-between items-center">
+                      <span className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Telemetry</span>
+                      {(appState === 'analyzing' || appState === 'fixing') && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
+                      )}
                     </div>
-                  )}
+                    
+                    <div ref={terminalRef} className="flex-1 overflow-y-auto p-5 font-mono text-xs space-y-4 text-zinc-400">
+                      {analysisSteps.map((step, idx) => {
+                        if (step.type === 'tool_call') {
+                          return (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={idx} className="flex flex-col gap-1.5 pb-2 border-b border-white/5">
+                              <div className="text-zinc-300 font-medium">{step.toolName}</div>
+                              <div className="text-zinc-600 truncate">{JSON.stringify(step.arguments)}</div>
+                            </motion.div>
+                          );
+                        }
+                        if (step.type === 'final_response') {
+                          return (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={idx} className="pt-4 text-white font-medium">
+                              Process complete.
+                            </motion.div>
+                          );
+                        }
+                        if (step.type === 'info') {
+                          return <div key={idx} className="text-zinc-600 italic pb-2">{step.text}</div>;
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* RIGHT COLUMN: RESULTS */}
-            <div className="lg:col-span-8">
-              <div className="bg-[#0f1115] border border-[#1f2229] rounded-2xl shadow-xl p-8 min-h-[calc(100vh-10rem)]">
-                <div className="mb-8 border-b border-[#1f2229] pb-6 flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                      <ShieldCheck className="w-7 h-7 text-emerald-500" />
-                      Analysis Report
-                    </h2>
-                    <p className="text-neutral-400 mt-2 flex items-center gap-2">
-                      <FileCode2 className="w-4 h-4" /> Evidence-backed analysis
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-neutral-500 font-mono mb-1">TARGET</div>
-                    <div className="text-sm text-cyan-300 font-mono bg-cyan-950/30 px-3 py-1 rounded border border-cyan-900/50">{url}</div>
+              {/* RIGHT: Report / Preview */}
+              <div className="lg:col-span-9 h-full">
+                <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl h-full flex flex-col p-2">
+                  <div className="bg-[#111111] rounded-2xl flex-1 flex flex-col overflow-hidden border border-white/5 relative">
+                    
+                    <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center z-10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                          {appState === 'fixed' || appState === 'fixing' ? <Globe className="w-4 h-4 text-white" /> : <Shield className="w-4 h-4 text-white" />}
+                        </div>
+                        <h2 className="text-xl font-medium text-white">
+                          {appState === 'fixed' || appState === 'fixing' ? 'Live Deployment' : 'Intelligence Report'}
+                        </h2>
+                      </div>
+                      
+                      {appState === 'complete' && (
+                        <motion.button 
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={handleFix}
+                          className="bg-white text-black font-medium px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm"
+                        >
+                          <Wand2 className="w-4 h-4" /> Auto-Fix Issues
+                        </motion.button>
+                      )}
+                      {appState === 'fixed' && (
+                        <div className="flex items-center gap-2 text-zinc-400 font-medium text-sm bg-white/5 px-4 py-2 rounded-xl">
+                          Deployed Successfully
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto relative bg-[#0a0a0a]">
+                      {appState === 'analyzing' ? (
+                        <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-4">
+                          <div className="w-8 h-8 border-2 border-white/10 border-t-white rounded-full animate-spin"></div>
+                          <p className="font-mono text-xs uppercase tracking-widest">Synthesizing...</p>
+                        </div>
+                      ) : appState === 'complete' ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="markdown-body custom-markdown p-8 lg:p-12 max-w-4xl mx-auto">
+                          <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                        </motion.div>
+                      ) : (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full h-full relative bg-white">
+                          {appState === 'fixing' && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                               <div className="w-8 h-8 border-2 border-black/10 border-t-black rounded-full animate-spin mb-4"></div>
+                               <h3 className="text-black font-medium text-sm tracking-widest uppercase">Applying Fixes...</h3>
+                            </div>
+                          )}
+                          <iframe 
+                            src={`http://localhost:5000/preview/${siteId}/index.html`}
+                            className="w-full h-full border-none"
+                            title="Live Preview"
+                          />
+                        </motion.div>
+                      )}
+                    </div>
+
                   </div>
                 </div>
-
-                {appState === 'analyzing' ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-neutral-500 gap-4">
-                    <Cpu className="w-12 h-12 text-[#1f2229] animate-pulse" />
-                    <p className="font-mono text-sm">Awaiting Gemma response...</p>
-                  </div>
-                ) : (
-                  <div className="markdown-body custom-markdown text-neutral-300">
-                    <ReactMarkdown>{analysisResult}</ReactMarkdown>
-                  </div>
-                )}
               </div>
-            </div>
 
-          </div>
-        )}
-
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
