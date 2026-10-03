@@ -7,7 +7,17 @@ export const extractAssets = (html, baseUrl) => {
   const addAsset = (url, type) => {
     if (!url) return;
     try {
-      const absoluteUrl = new URL(url, baseUrl).href;
+      const trimmedUrl = url.trim();
+      if (trimmedUrl.startsWith('data:')) return;
+      if (trimmedUrl.startsWith('blob:')) return;
+      if (trimmedUrl.startsWith('javascript:')) return;
+      if (trimmedUrl.startsWith('#')) return;
+
+      const absoluteUrl = new URL(trimmedUrl, baseUrl).href;
+      
+      const parsed = new URL(absoluteUrl);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return;
+
       if (!assets.find(a => a.url === absoluteUrl)) {
         assets.push({ url: absoluteUrl, type });
       }
