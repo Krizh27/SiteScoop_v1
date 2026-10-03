@@ -115,13 +115,18 @@ SiteScoop AI is an open-source, AI-powered website recovery and development agen
   - Packages and exports the reconstructed workspace as a portable ZIP archive.
 
 ### 5. Local AI Inference Layer
-- **Status**: Planned (Stage 3)
-- **Planned Technology**: Local Ollama instance running the **Gemma 4** model.
+- **Status**: Implemented (Ollama Integration)
+- **Technology**: Local Ollama instance running Gemma (`OLLAMA_MODEL=gemma4:e2b`).
 - **Responsibilities**:
-  - Interfaces with Ollama's local HTTP API (`http://localhost:11434/api/generate` and `/api/chat`).
+  - Interfaces with Ollama's local HTTP API (`http://localhost:11434/api/chat`).
   - Enforces zero mandatory reliance on paid hosted LLM APIs (OpenAI, Anthropic, etc.), ensuring total privacy and offline capability.
-  - Formats system prompts and code context specifically optimized for Gemma 4's context window and instruction-following abilities.
-  - Performs intelligent code comprehension, bug detection, missing asset reconstruction, and modernization recommendations.
+  - Formats system prompts and code context specifically optimized for Gemma to analyze HTML/CSS context.
+  - Generates:
+    1. Short website summary
+    2. Three observations about the website
+    3. Three practical improvement suggestions
+    4. One suggested CSS improvement
+  - Accessible via `POST /api/ai/analyze`.
 
 ### 6. Autonomous Agent Harness
 - **Status**: Planned (Stage 4)
@@ -141,7 +146,7 @@ SiteScoop AI is an open-source, AI-powered website recovery and development agen
 | **Stage 0** | **Project Foundation** | **Completed** | Express backend, React/Vite/Tailwind frontend, `/api/health`, environment configs, documentation. |
 | **Stage 1** | **Website Extraction Engine** | **Completed** | SSRF-safe URL validation, Cheerio HTML parsing, asset fetcher, `POST /api/extract`, staging manifest. |
 | **Stage 2** | **Workspace Synthesis** | **Planned** | Workspace file management, project structure reconstruction, diff engine, ZIP exporter. |
-| **Stage 3** | **Local AI Inference** | **Planned** | Ollama integration with local Gemma 4 model, prompt engineering, code diagnosis. |
+| **Stage 3** | **Local AI Inference** | **Completed** | Ollama integration with local Gemma model, prompt engineering, code diagnosis, `POST /api/ai/analyze`. |
 | **Stage 4** | **Agent Development Loop**| **Planned** | Tool execution harness, Zod validation, iterative self-repair and refinement. |
 
 ---

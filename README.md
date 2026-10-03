@@ -217,6 +217,27 @@ The client development server will start at `http://localhost:5173`.
   }
   ```
 
+### 3. Local AI Website Analysis
+- **Endpoint**: `POST /api/ai/analyze`
+- **Description**: Uses a local Gemma model running via Ollama to inspect, summarize, and suggest actionable code and CSS improvements based on extracted HTML and CSS context.
+- **Request Body**:
+  ```json
+  {
+    "projectId": "proj_1791011925945_ecac37",
+    "question": "Explain this website and suggest improvements"
+  }
+  ```
+- **Response (HTTP 200 OK)**:
+  ```json
+  {
+    "success": true,
+    "projectId": "proj_1791011925945_ecac37",
+    "model": "gemma4:e2b",
+    "question": "Explain this website and suggest improvements",
+    "analysis": "1. Short website summary: ...\n2. Three observations: ...\n3. Three practical suggestions: ...\n4. One suggested CSS improvement: ..."
+  }
+  ```
+
 ---
 
 ## Security & SSRF Protection

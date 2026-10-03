@@ -55,3 +55,32 @@ export async function extractWebsite(url) {
     throw error;
   }
 }
+
+/**
+ * Trigger local AI website analysis with Ollama.
+ * @param {string} projectId - Project ID of extracted website
+ * @param {string} question - User question/instruction
+ * @returns {Promise<object>} AI analysis result
+ */
+export async function analyzeWebsite(projectId, question) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ai/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ projectId, question })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to analyze website with AI:', error);
+    throw error;
+  }
+}

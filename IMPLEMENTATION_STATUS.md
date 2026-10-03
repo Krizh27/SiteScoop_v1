@@ -77,9 +77,13 @@ All Stage 1 backend services, controllers, routes, security guards, utilities, t
 | `server/src/services/resourceExtractor.service.js` | Cheerio HTML parsing & extraction | Implemented (Stage 1) |
 | `server/src/services/assetFetcher.service.js` | Concurrency-governed asset downloader | Implemented (Stage 1) |
 | `server/src/utils/fileUtils.js` | Sanitization & staging utilities | Implemented (Stage 1) |
+| `server/src/routes/ai.routes.js` | `POST /api/ai/analyze` route | Implemented (Local AI) |
+| `server/src/controllers/ai.controller.js` | Controller for Ollama AI analysis | Implemented (Local AI) |
+| `server/src/services/ai.service.js` | Prompt construction & Ollama API bridge | Implemented (Local AI) |
+| `workspace/projects/` | Reconstructed project directory with rewritten assets | Implemented (MVP) |
 | `workspace/.staging/` | Temporary staging area for extractions | Implemented (Stage 1) |
 | `server/src/routes/health.routes.js` | Health check endpoint | Implemented (Stage 0) |
-| `client/` | React + Vite + Tailwind frontend | Implemented (Stage 0) |
+| `client/` | React + Vite + Tailwind frontend with extraction & AI UI | Implemented |
 
 ---
 
@@ -88,7 +92,6 @@ All Stage 1 backend services, controllers, routes, security guards, utilities, t
 | Stage | Focus Area | Planned Libraries |
 |---|---|---|
 | **Stage 2** | **Workspace Synthesis & Diffs** | Node.js `fs/promises`, `path`, `diff`, `jszip` |
-| **Stage 3** | **Local AI Inference** | Local **Ollama** running **Gemma 4** model |
 | **Stage 4** | **Autonomous Agent Dev Loop** | `zod` schema validation, iterative dev-server build checks |
 
 ---
@@ -97,14 +100,13 @@ All Stage 1 backend services, controllers, routes, security guards, utilities, t
 
 - [x] Dependencies installed (`axios`, `cheerio`, `ipaddr.js`) with **0 vulnerabilities**.
 - [x] `POST /api/extract` implemented and verified with live websites (`https://example.com`, `https://httpbin.org`).
-- [x] Discovered stylesheets, scripts, images, fonts, and icons downloaded into `workspace/.staging/<id>/assets/`.
-- [x] `manifest.json` generated containing full page metadata and asset relative paths.
-- [x] SSRF defenses tested and verified:
-  - `http://localhost:5000` -> Blocked (HTTP 400).
-  - `http://127.0.0.1` -> Blocked (HTTP 400).
-  - `http://169.254.169.254` -> Blocked (HTTP 400).
-  - `http://192.168.1.1` -> Blocked (HTTP 400).
-  - `ftp://example.com` -> Blocked (HTTP 400).
-  - `http://user:pass@example.com` -> Blocked (HTTP 400).
+- [x] HTML asset references rewritten to local relative paths (`assets/...`).
+- [x] Projects stored in `workspace/projects/{projectId}/` with `index.html` and `manifest.json`.
+- [x] `POST /api/ai/analyze` implemented using local Ollama model (`gemma4:e2b`).
+- [x] Verified live inference with running Ollama model:
+  - Short website summary
+  - Three observations
+  - Three practical improvement suggestions
+  - One suggested CSS improvement
+- [x] Frontend connected with extraction and AI analysis UI, including question input, loading state, error display, and readable AI response card.
 - [x] `GET /api/health` confirmed operational (`{ success: true, app: "SiteScoop AI", status: "running" }`).
-- [x] No breaking changes to existing Stage 0 components.
