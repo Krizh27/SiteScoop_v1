@@ -142,3 +142,134 @@ export const runAgent = async (req, res) => {
     });
   }
 };
+
+/**
+ * GET /api/agent/changes/:changeId
+ */
+export const getChange = async (req, res) => {
+  try {
+    const { changeStore } = await import('../agent/changes/change-store.js');
+    const change = changeStore.getChange(req.params.changeId);
+
+    if (!change) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'CHANGE_NOT_FOUND', message: `Change "${req.params.changeId}" not found.` }
+      });
+    }
+
+    return res.json({
+      success: true,
+      change
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: err.message }
+    });
+  }
+};
+
+/**
+ * GET /api/agent/changes/project/:projectId
+ */
+export const getProjectChanges = async (req, res) => {
+  try {
+    const { changeStore } = await import('../agent/changes/change-store.js');
+    const changes = changeStore.listByProject(req.params.projectId);
+    return res.json({
+      success: true,
+      changes
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: err.message }
+    });
+  }
+};
+
+/**
+ * POST /api/agent/changes/:changeId/apply
+ * HUMAN APPROVAL ENDPOINT — executes apply_edit on the pending change.
+ */
+export const applyChange = async (req, res) => {
+  try {
+    const { changeStore } = await import('../agent/changes/change-store.js');
+    const { applyEditTool } = await import('../agent/tools/apply-edit.tool.js');
+
+    const change = changeStore.getChange(req.params.changeId);
+    if (!change) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'CHANGE_NOT_FOUND', message: `Change "${req.params.changeId}" not found.` }
+      });
+    }
+
+    let context;
+    try {
+      context = new AgentContext(change.projectId, getWorkspaceDir());
+    } catch (err) {
+      return res.status(404).json({
+        success: false,
+        error: { code: err.code || 'PROJECT_NOT_FOUND', message: err.message }
+      });
+    }
+
+    const result = await applyEditTool.execute(context, { changeId: change.changeId });
+    return res.json(result);
+  } catch (err) {
+    const statusCode = err.code === 'EDIT_CONFLICT' ? 409 : 400;
+    return res.status(statusCode).json({
+      success: false,
+      error: {
+        code: err.code || 'APPLY_EDIT_FAILED',
+        message: err.message
+      }
+    });
+  }
+};
+
+/**
+ * POST /api/agent/changes/:changeId/revert
+ * Undo endpoint using originalContent
+ */
+export const revertChange = async (req, res) => {
+  try {
+    const { changeStore } = await import('../agent/changes/change-store.js');
+    const { resolveWorkspacePath } = await import('../utils/workspace-path.js');
+    const fs = await import('fs/promises');
+
+    const change = changeStore.getChange(req.params.changeId);
+    if (!change) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'CHANGE_NOT_FOUND', message: `Change "${req.params.changeId}" not found.` }
+      });
+    }
+
+    if (change.status !== 'applied') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'CANNOT_REVERT', message: `Cannot revert change in status "${change.status}".` }
+      });
+    }
+
+    const targetFilePath = resolveWorkspacePath(getWorkspaceDir(), change.projectId, change.path);
+    await fs.writeFile(targetFilePath, change.originalContent, 'utf-8');
+    changeStore.markReverted(change.changeId);
+
+    return res.json({
+      success: true,
+      changeId: change.changeId,
+      path: change.path,
+      status: 'reverted'
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'REVERT_FAILED', message: err.message }
+    });
+  }
+};
+

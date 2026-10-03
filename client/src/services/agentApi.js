@@ -30,7 +30,7 @@ export const getAgentStatus = async () => {
 };
 
 /**
- * Run the autonomous read-only agent for a given project and request.
+ * Run the autonomous agent for a given project and request.
  */
 export const runAgent = async (projectId, request) => {
   const response = await fetch(`${API_BASE_URL}/agent/run`, {
@@ -44,3 +44,44 @@ export const runAgent = async (projectId, request) => {
   const data = await response.json();
   return data;
 };
+
+/**
+ * Get details & diff for a proposed change.
+ */
+export const getChange = async (changeId) => {
+  const response = await fetch(`${API_BASE_URL}/agent/changes/${changeId}`);
+  const data = await response.json();
+  return data;
+};
+
+/**
+ * Get all proposed/applied changes for a project.
+ */
+export const getProjectChanges = async (projectId) => {
+  const response = await fetch(`${API_BASE_URL}/agent/changes/project/${projectId}`);
+  const data = await response.json();
+  return data;
+};
+
+/**
+ * Human approval: apply a pending proposed edit.
+ */
+export const applyChange = async (changeId) => {
+  const response = await fetch(`${API_BASE_URL}/agent/changes/${changeId}/apply`, {
+    method: 'POST'
+  });
+  const data = await response.json();
+  return data;
+};
+
+/**
+ * Revert an applied change.
+ */
+export const revertChange = async (changeId) => {
+  const response = await fetch(`${API_BASE_URL}/agent/changes/${changeId}/revert`, {
+    method: 'POST'
+  });
+  const data = await response.json();
+  return data;
+};
+

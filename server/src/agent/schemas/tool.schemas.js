@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Reject navigation and absolute paths
 const safePathPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).*$/;
 
-export const projectIdSchema = z.string().regex(/^recovery-[a-zA-Z0-9-]+$/);
+export const projectIdSchema = z.string().regex(/^[a-zA-Z0-9_-]+$/, 'Invalid project ID format');
 
 export const projectPathSchema = z.string()
   .min(1)
@@ -39,3 +39,19 @@ export const getFileMetadataSchema = z.object({
 export const analyzeDependenciesSchema = z.object({
   projectId: projectIdSchema
 });
+
+export const proposeEditSchema = z.object({
+  projectId: projectIdSchema,
+  path: projectPathSchema,
+  proposedContent: z.string({ required_error: 'proposedContent is required' }),
+  reason: z.string().min(1).optional().default('Proposed code edit')
+});
+
+export const getDiffSchema = z.object({
+  changeId: z.string().min(1, 'changeId is required')
+});
+
+export const applyEditSchema = z.object({
+  changeId: z.string().min(1, 'changeId is required')
+});
+

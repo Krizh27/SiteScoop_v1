@@ -141,6 +141,19 @@ curl -X POST http://localhost:5000/api/inspector/run \
 curl http://localhost:5000/api/inspector/projects/recovery-20261003060539-809/report
 ```
 
+## MVP Demo
+
+1. Enter a deployed website URL (or open the seeded `demo-site` project).
+2. Recover the publicly accessible frontend.
+3. Open the recovered workspace.
+4. Ask the AI agent to inspect the project.
+5. Ask it to propose a fix.
+6. Review the generated diff.
+7. Approve the change.
+8. Preview the updated site with live hot-reloading!
+
+> **Scope Notice**: SiteScoop reconstructs publicly accessible frontend resources. It does not recover private backend source code, databases, or inaccessible assets.
+
 ## Current Implementation Status
 - **Stage 0**: Project Foundation is complete.
 - **Stage 1**: Website Recovery Engine is complete. Recover deployed sites into a workspace.
@@ -149,3 +162,5 @@ curl http://localhost:5000/api/inspector/projects/recovery-20261003060539-809/re
 - **Stage 4**: Local Gemma Model Adapter is complete. Configuration-driven Ollama connection with base system prompts, error sandboxing, and non-streaming model generation.
 - **Stage 5**: Agent Harness is complete. Autonomous multi-step read-only reasoning loop, Zod action protocol, repeat-call detection, step limits, and Developer Agent Panel.
 - **Stage 6**: AI Project Inspector is complete. Deterministic pre-checks, evidence-backed finding schema, Zod validation, normalization, and React Inspector Panel.
+- **MVP Sprint**: Code proposal, unified diff review, human-approved writes, live website preview iframe, and seeded demo fixture.
+

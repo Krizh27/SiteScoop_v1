@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getFileContent, getAssetUrl } from '../../services/workspaceApi';
 
-const FileViewer = ({ projectId, fileNode }) => {
+const FileViewer = ({ projectId, fileNode, refreshKey }) => {
   const [fileData, setFileData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +24,7 @@ const FileViewer = ({ projectId, fileNode }) => {
     };
     
     loadFile();
-  }, [projectId, fileNode]);
+  }, [projectId, fileNode, refreshKey]);
 
   if (!fileNode) {
     return <div className="flex items-center justify-center h-full text-gray-400">Select a file to view its contents</div>;

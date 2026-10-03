@@ -6,10 +6,16 @@ export class AgentState {
     this.steps = [];
     this.toolCalls = [];
     this.observations = [];
-    this.status = 'running'; // 'running' | 'completed' | 'needs_clarification' | 'limit_reached' | 'failed'
+    this.status = 'running'; // 'running' | 'completed' | 'change_pending' | 'needs_clarification' | 'limit_reached' | 'failed'
     this.finalAnswer = null;
     this.clarificationQuestion = null;
+    this.pendingChange = null;
     this.error = null;
+  }
+
+  recordPendingChange(change) {
+    this.pendingChange = change;
+    this.status = 'change_pending';
   }
 
   recordStep(stepNumber, action, observation = null) {

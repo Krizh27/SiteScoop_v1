@@ -134,6 +134,14 @@ export async function runAgentLoop(state, context, options = {}) {
 
       state.recordStep(stepNumber, action, observationText);
       state.recordObservation(toolName, observationText);
+
+      // Section 15: If an edit was proposed, stop and await human review
+      if (toolName === 'propose_edit' && execResult?.success && execResult?.data?.changeId) {
+        logger.info(`Pending change created: ${execResult.data.changeId}. Stopping loop for human approval.`);
+        state.recordPendingChange(execResult.data);
+        state.finalAnswer = `I have inspected the file and proposed an edit: ${execResult.data.reason || 'Code improvement'}. A pending change (${execResult.data.changeId}) has been created for your review. Please review the diff and approve to apply.`;
+        return state;
+      }
     }
   }
 

@@ -6,7 +6,10 @@ export const ALLOWED_TOOLS = new Set([
   'search_project',
   'get_recovery_report',
   'get_file_metadata',
-  'analyze_dependencies'
+  'analyze_dependencies',
+  'propose_edit',
+  'get_diff'
+  // apply_edit is strictly blocked from autonomous model execution (human approval only)
 ]);
 
 export class AgentPolicy {

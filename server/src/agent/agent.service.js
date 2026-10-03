@@ -64,6 +64,21 @@ export class AgentService {
       toolCalls: finalState.toolCalls.map(tc => ({ tool: tc.tool }))
     };
 
+    if (finalState.status === 'change_pending' || finalState.pendingChange) {
+      return {
+        success: true,
+        status: 'change_pending',
+        answer: finalState.finalAnswer || 'A code modification has been proposed for review.',
+        change: {
+          changeId: finalState.pendingChange?.changeId,
+          path: finalState.pendingChange?.path,
+          reason: finalState.pendingChange?.reason,
+          diff: finalState.pendingChange?.diff
+        },
+        ...baseSummary
+      };
+    }
+
     if (finalState.status === 'completed') {
       return {
         success: true,

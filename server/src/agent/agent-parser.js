@@ -57,6 +57,33 @@ export class AgentParser {
       );
     }
 
+    // Normalize minor model variations (e.g. final_answer, response, answer)
+    if (parsedJson && typeof parsedJson === 'object' && !Array.isArray(parsedJson)) {
+      if (!parsedJson.type) {
+        if (parsedJson.tool) {
+          parsedJson.type = 'tool_call';
+        } else if (parsedJson.answer || parsedJson.finding || parsedJson.findings || parsedJson.response || parsedJson.content) {
+          parsedJson.type = 'final';
+          parsedJson.answer = parsedJson.answer || parsedJson.response || parsedJson.content || 
+            (typeof parsedJson.finding === 'string' ? parsedJson.finding : JSON.stringify(parsedJson.finding || parsedJson.findings));
+        } else if (parsedJson.question) {
+          parsedJson.type = 'clarification';
+        }
+      } else {
+        const lowerType = String(parsedJson.type).toLowerCase();
+        if (['final_answer', 'answer', 'response', 'finding', 'result', 'inspection'].includes(lowerType)) {
+          parsedJson.type = 'final';
+          if (!parsedJson.answer && parsedJson.content) parsedJson.answer = parsedJson.content;
+          if (!parsedJson.answer && parsedJson.response) parsedJson.answer = parsedJson.response;
+          if (!parsedJson.answer && parsedJson.finding) {
+            parsedJson.answer = typeof parsedJson.finding === 'string' ? parsedJson.finding : JSON.stringify(parsedJson.finding);
+          }
+        } else if (['tool', 'call', 'tool_use', 'action'].includes(lowerType)) {
+          parsedJson.type = 'tool_call';
+        }
+      }
+    }
+
     // 4. Validate against Zod schema
     const validation = agentActionSchema.safeParse(parsedJson);
     if (!validation.success) {

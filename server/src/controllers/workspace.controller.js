@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { listProjects, getProjectInfo, getRecoveryReport } from '../services/workspace/workspace.service.js';
 import { getFileTree } from '../services/workspace/file-tree.service.js';
 import { readFileContent, serveAssetStream, searchWorkspace } from '../services/workspace/file-reader.service.js';
+import { resolveWorkspacePath } from '../utils/workspace-path.js';
 import path from 'path';
+import fs from 'fs/promises';
 
 const getWorkspaceDir = () => process.env.WORKSPACE_DIR 
   ? path.resolve(process.cwd(), process.env.WORKSPACE_DIR)
@@ -78,3 +80,48 @@ export const getReport = async (req, res) => {
     res.status(404).json({ success: false, error: { code: 'REPORT_NOT_FOUND', message: 'Report not found.' } });
   }
 };
+
+/**
+ * GET /api/workspace/projects/:projectId/preview
+ * GET /api/workspace/projects/:projectId/preview/*
+ * Safely serves frontend files for live preview within an iframe.
+ */
+export const previewProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    let subpath = req.params[0] || req.query.path || '';
+
+    // If subpath is empty or ends with a slash, serve index.html
+    if (!subpath || subpath.endsWith('/')) {
+      subpath = path.posix.join(subpath, 'index.html');
+    }
+
+    // Resolve path securely within project boundaries
+    let filePath;
+    try {
+      filePath = resolveWorkspacePath(getWorkspaceDir(), projectId, subpath);
+    } catch (err) {
+      return res.status(403).send('Forbidden: Path traversal or invalid project path.');
+    }
+
+    // Check if target file exists and is a regular file
+    let stat;
+    try {
+      stat = await fs.stat(filePath);
+      if (stat.isDirectory()) {
+        filePath = path.join(filePath, 'index.html');
+        stat = await fs.stat(filePath);
+      }
+    } catch {
+      return res.status(404).send(`Resource "${subpath}" not found in project "${projectId}".`);
+    }
+
+    // Set permissive frame headers for local preview iframe embedding
+    res.removeHeader('X-Frame-Options');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self' http://localhost:*");
+    return res.sendFile(filePath);
+  } catch (error) {
+    return res.status(500).send(`Preview error: ${error.message}`);
+  }
+};
+
