@@ -3,7 +3,7 @@ import { getAllTools, getTool } from '../tools/toolRegistry.js';
 
 const MAX_AGENT_STEPS = 8;
 
-export const runAgentLoop = async (userMessage) => {
+export const runAgentLoop = async (userMessage, sysInstruction) => {
   const tools = getAllTools();
   
   const messages = [
@@ -18,7 +18,7 @@ export const runAgentLoop = async (userMessage) => {
     
     let aiResult;
     try {
-      aiResult = await generateWithTools({ messages, tools });
+      aiResult = await generateWithTools({ messages, tools, sysInstruction });
     } catch (err) {
       console.error(`[AGENT] Model API error: ${err.message}`);
       throw new Error(`Model API error: ${err.message}`);

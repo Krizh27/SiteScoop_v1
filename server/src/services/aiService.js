@@ -37,7 +37,7 @@ export const generateResponse = async (input, options = {}) => {
   }
 };
 
-export const generateWithTools = async ({ messages, tools }) => {
+export const generateWithTools = async ({ messages, tools, sysInstruction }) => {
   const apiKey = process.env.GOOGLE_API_KEY;
   const modelName = process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it';
 
@@ -53,14 +53,20 @@ export const generateWithTools = async ({ messages, tools }) => {
     parameters: t.parameters
   }));
 
+  const config = {
+    tools: [{ functionDeclarations }],
+    temperature: 0.2
+  };
+  
+  if (sysInstruction) {
+    config.systemInstruction = sysInstruction;
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: modelName,
       contents: messages,
-      config: {
-        tools: [{ functionDeclarations }],
-        temperature: 0.2
-      }
+      config
     });
 
     const functionCalls = response.functionCalls || [];
